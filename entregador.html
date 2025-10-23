@@ -9,6 +9,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -41,6 +46,103 @@
             color: var(--text-primary);
             line-height: 1.6;
             padding-bottom: 80px;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        }
+
+        .login-container {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-container h1 {
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .login-container .subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 8px;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .toggle-login {
+            margin-top: 24px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .toggle-login button {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: underline;
         }
 
         .header {
@@ -401,21 +503,98 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <h1 class="logo">
-                    <i class="fas fa-motorcycle"></i>
-                    Entregador FOODVALLE
-                </h1>
-                <div class="delivery-status">
-                    <div class="status-badge" id="statusBadge">OFFLINE</div>
-                    <div class="status-text" id="statusText">Clique para ficar online</div>
+    <!-- Tela de Login -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <h1><i class="fas fa-motorcycle"></i> FOODVALLE</h1>
+            <p class="subtitle">Entregador</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required>
                 </div>
+                
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" required>
+                </div>
+                
+                <button type="submit" class="btn-primary" id="loginBtn">Entrar</button>
+            </form>
+            
+            <div class="toggle-login">
+                <p>Não tem conta? <button type="button" onclick="showRegister()">Cadastre-se</button></p>
+            </div>
+            
+            <form id="registerForm" style="display: none;">
+                <div class="form-group">
+                    <label for="regName">Nome Completo</label>
+                    <input type="text" id="regName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regEmail">Email</label>
+                    <input type="email" id="regEmail" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regPassword">Senha</label>
+                    <input type="password" id="regPassword" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regPhone">Telefone</label>
+                    <input type="tel" id="regPhone" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regPixType">Tipo de PIX</label>
+                    <select id="regPixType" required>
+                        <option value="">Selecione...</option>
+                        <option value="cpf">CPF</option>
+                        <option value="email">Email</option>
+                        <option value="phone">Telefone</option>
+                        <option value="random">Chave Aleatória</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regPixKey">Chave PIX</label>
+                    <input type="text" id="regPixKey" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regVehicle">Veículo</label>
+                    <input type="text" id="regVehicle" placeholder="Ex: Moto Honda CG 160" required>
+                </div>
+                
+                <button type="submit" class="btn-primary" id="registerBtn">Cadastrar</button>
+            </form>
+            
+            <div class="toggle-login" id="toggleToLogin" style="display: none;">
+                <p>Já tem conta? <button type="button" onclick="showLogin()">Entre aqui</button></p>
             </div>
         </div>
-    </header>
+    </div>
+
+    <!-- App Principal -->
+    <div id="mainApp" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <h1 class="logo">
+                        <i class="fas fa-motorcycle"></i>
+                        Entregador FOODVALLE
+                    </h1>
+                    <div class="delivery-status">
+                        <div class="status-badge" id="statusBadge">OFFLINE</div>
+                        <div class="status-text" id="statusText">Clique para ficar online</div>
+                    </div>
+                </div>
+            </div>
+        </header>
 
     <!-- Main Content -->
     <main>
@@ -502,12 +681,11 @@
         // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAexCf7hPN2OQvfsw66UDpci6nycivrK98",
-            authDomain: "void-activation-system.firebaseapp.com",
-            databaseURL: "https://void-activation-system-default-rtdb.firebaseio.com",
-            projectId: "void-activation-system",
-            storageBucket: "void-activation-system.firebasestorage.app",
-            messagingSenderId: "194831837355",
-            appId: "1:194831837355:web:8b1c4c8e8c8e8c8e8c8e8c"
+            authDomain: "foodvalle-2024.firebaseapp.com",
+            projectId: "foodvalle-2024",
+            storageBucket: "foodvalle-2024.appspot.com",
+            messagingSenderId: "590753398321",
+            appId: "1:590753398321:web:abcd1234567890"
         };
 
         // Inicializar Firebase
@@ -855,6 +1033,134 @@
             }
         `;
         document.head.appendChild(animationStyles);
+
+        let currentUser = null;
+
+        // Verificar autenticação ao carregar
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                initializeDeliveryApp();
+            } else {
+                currentUser = null;
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('mainApp').style.display = 'none';
+            }
+        });
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Entrando...';
+            
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                
+                // Verificar se é entregador
+                const delivererDoc = await db.collection('deliverers').doc(userCredential.user.uid).get();
+                if (!delivererDoc.exists) {
+                    throw new Error('Usuário não é um entregador');
+                }
+                
+                console.log('Login realizado com sucesso');
+            } catch (error) {
+                console.error('Erro no login:', error);
+                alert(error.message);
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Entrar';
+            }
+        });
+
+        // Registro
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const phone = document.getElementById('regPhone').value;
+            const pixType = document.getElementById('regPixType').value;
+            const pixKey = document.getElementById('regPixKey').value;
+            const vehicle = document.getElementById('regVehicle').value;
+            const registerBtn = document.getElementById('registerBtn');
+            
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Cadastrando...';
+            
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                
+                // Salvar dados do entregador
+                await db.collection('deliverers').doc(userCredential.user.uid).set({
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    pixInfo: {
+                        pixType: pixType,
+                        pixKey: pixKey
+                    },
+                    vehicle: vehicle,
+                    status: 'offline',
+                    rating: 5.0,
+                    totalDeliveries: 0,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                console.log('Registro realizado com sucesso');
+            } catch (error) {
+                console.error('Erro no registro:', error);
+                alert(error.message);
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Cadastrar';
+            }
+        });
+
+        // Alternar entre login e registro
+        function showRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            document.querySelector('.toggle-login').style.display = 'none';
+            document.getElementById('toggleToLogin').style.display = 'block';
+        }
+
+        function showLogin() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.querySelector('.toggle-login').style.display = 'block';
+            document.getElementById('toggleToLogin').style.display = 'none';
+        }
+
+        // Inicializar app de entrega
+        function initializeDeliveryApp() {
+            // Configurar listeners para pedidos disponíveis
+            setupOrderListeners();
+        }
+
+        // Configurar listeners para pedidos
+        function setupOrderListeners() {
+            db.collection('orders')
+              .where('status', '==', 'pending')
+              .onSnapshot((snapshot) => {
+                  updateAvailableOrders(snapshot.docs);
+              });
+        }
+
+        // Atualizar pedidos disponíveis
+        function updateAvailableOrders(orders) {
+            // Atualizar interface com pedidos disponíveis
+            console.log('Pedidos disponíveis:', orders.length);
+        }
+
+        // Logout
+        function logout() {
+            auth.signOut();
+        }
     </script>
 </body>
 </html>
