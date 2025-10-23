@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOODVALLE Cantina - Gestão de Pedidos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #0066cc;
+            --primary-dark: #004499;
+            --secondary-color: #00b3ff;
+            --accent-color: #ff6600;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-light: #999999;
+            --background: #f5f8fc;
+            --white: #ffffff;
+            --shadow: 0 2px 15px rgba(0, 102, 204, 0.1);
+            --shadow-light: 0 1px 5px rgba(0, 102, 204, 0.08);
+            --border-radius: 16px;
+            --border-radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--white);
+            padding: 20px 0;
+            box-shadow: var(--shadow);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo i {
+            font-size: 32px;
+            color: var(--secondary-color);
+        }
+
+        .restaurant-info {
+            text-align: right;
+        }
+
+        .restaurant-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .restaurant-status {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            margin-right: 6px;
+        }
+
+        .main-content {
+            padding: 30px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .orders-section {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light);
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .refresh-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .orders-container {
+            padding: 20px 24px;
+        }
+
+        .order-card {
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius-sm);
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .order-card:hover {
+            border-color: var(--primary-color);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .order-id {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .order-time {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .order-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #fff3e0;
+            color: var(--warning-color);
+        }
+
+        .status-preparing {
+            background: #e3f2fd;
+            color: var(--primary-color);
+        }
+
+        .status-ready {
+            background: #f3e5f5;
+            color: #9c27b0;
+        }
+
+        .order-items {
+            margin: 16px 0;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .item-description {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .item-quantity {
+            font-weight: 600;
+            margin: 0 12px;
+        }
+
+        .item-price {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .order-total {
+            text-align: right;
+            padding-top: 12px;
+            border-top: 2px solid var(--primary-color);
+            margin-top: 12px;
+        }
+
+        .total-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-confirm {
+            background: var(--success-color);
+            color: var(--white);
+        }
+
+        .btn-confirm:hover {
+            background: #45a049;
+        }
+
+        .btn-preparing {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .btn-preparing:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-ready {
+            background: #9c27b0;
+            color: var(--white);
+        }
+
+        .btn-ready:hover {
+            background: #7b1fa2;
+        }
+
+        .btn-cancel {
+            background: var(--danger-color);
+            color: var(--white);
+        }
+
+        .btn-cancel:hover {
+            background: #d32f2f;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 16px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+
+            .order-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .order-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">
+                    <i class="fas fa-store"></i>
+                    FOODVALLE Cantina
+                </h1>
+                <div class="restaurant-info">
+                    <div class="restaurant-name">Cantina Central UNIVALI</div>
+                    <div class="restaurant-status">
+                        <span class="status-indicator"></span>
+                        Aberto agora
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: var(--warning-color);">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-number" id="pendingCount">0</div>
+                    <div class="stat-label">Pedidos Pendentes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: var(--primary-color);">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="stat-number" id="preparingCount">0</div>
+                    <div class="stat-label">Em Preparo</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #9c27b0;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-number" id="readyCount">0</div>
+                    <div class="stat-label">Prontos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: var(--success-color);">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-number" id="todayTotal">R$ 0</div>
+                    <div class="stat-label">Vendas Hoje</div>
+                </div>
+            </div>
+
+            <!-- Orders Section -->
+            <div class="orders-section">
+                <div class="section-header">
+                    <h2 class="section-title">Pedidos em Tempo Real</h2>
+                    <button class="refresh-btn" onclick="refreshOrders()">
+                        <i class="fas fa-sync-alt"></i>
+                        Atualizar
+                    </button>
+                </div>
+                <div class="orders-container" id="ordersContainer">
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <p>Carregando pedidos...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAexCf7hPN2OQvfsw66UDpci6nycivrK98",
+            authDomain: "void-activation-system.firebaseapp.com",
+            databaseURL: "https://void-activation-system-default-rtdb.firebaseio.com",
+            projectId: "void-activation-system",
+            storageBucket: "void-activation-system.firebasestorage.app",
+            messagingSenderId: "194831837355",
+            appId: "1:194831837355:web:8b1c4c8e8c8e8c8e8c8e8c"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        class CantinaSystem {
+            constructor() {
+                this.ordersRef = db.collection('orders');
+                this.restaurantId = '1'; // ID da Cantina Central UNIVALI
+                this.orders = [];
+                this.unsubscribe = null;
+            }
+
+            // Escutar pedidos em tempo real
+            startListening() {
+                this.unsubscribe = this.ordersRef
+                    .where('restaurantId', '==', this.restaurantId)
+                    .orderBy('createdAt', 'desc')
+                    .onSnapshot((snapshot) => {
+                        this.orders = snapshot.docs.map(doc => ({ 
+                            id: doc.id, 
+                            ...doc.data() 
+                        }));
+                        this.updateUI();
+                    });
+            }
+
+            // Parar de escutar
+            stopListening() {
+                if (this.unsubscribe) {
+                    this.unsubscribe();
+                }
+            }
+
+            // Atualizar status do pedido
+            async updateOrderStatus(orderId, status, estimatedTime = null) {
+                try {
+                    const updateData = {
+                        status,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    if (estimatedTime) {
+                        updateData.estimatedDeliveryTime = estimatedTime;
+                    }
+
+                    await this.ordersRef.doc(orderId).update(updateData);
+                    this.showNotification(`Pedido ${orderId} atualizado para ${this.getStatusText(status)}`, 'success');
+                } catch (error) {
+                    console.error('Erro ao atualizar pedido:', error);
+                    this.showNotification('Erro ao atualizar pedido', 'error');
+                }
+            }
+
+            // Atualizar interface
+            updateUI() {
+                this.updateStats();
+                this.renderOrders();
+            }
+
+            // Atualizar estatísticas
+            updateStats() {
+                const pending = this.orders.filter(o => o.status === 'pending').length;
+                const preparing = this.orders.filter(o => o.status === 'preparing').length;
+                const ready = this.orders.filter(o => o.status === 'ready').length;
+                
+                // Vendas de hoje
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayOrders = this.orders.filter(o => {
+                    if (!o.createdAt) return false;
+                    const orderDate = o.createdAt.toDate();
+                    return orderDate >= today;
+                });
+                const todayTotal = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+
+                document.getElementById('pendingCount').textContent = pending;
+                document.getElementById('preparingCount').textContent = preparing;
+                document.getElementById('readyCount').textContent = ready;
+                document.getElementById('todayTotal').textContent = `R$ ${todayTotal.toFixed(2)}`;
+            }
+
+            // Renderizar pedidos
+            renderOrders() {
+                const container = document.getElementById('ordersContainer');
+                
+                if (this.orders.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-coffee"></i>
+                            </div>
+                            <p>Nenhum pedido no momento</p>
+                            <small>Os novos pedidos aparecerão aqui automaticamente</small>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Filtrar pedidos ativos
+                const activeOrders = this.orders.filter(o => 
+                    ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status)
+                );
+
+                if (activeOrders.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <p>Todos os pedidos foram processados!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = activeOrders.map(order => this.renderOrderCard(order)).join('');
+            }
+
+            // Renderizar card do pedido
+            renderOrderCard(order) {
+                const timeAgo = this.getTimeAgo(order.createdAt);
+                const statusClass = `status-${order.status}`;
+                const statusText = this.getStatusText(order.status);
+
+                return `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div>
+                                <div class="order-id">#${order.id}</div>
+                                <div class="order-time">${timeAgo}</div>
+                            </div>
+                            <div class="order-status ${statusClass}">${statusText}</div>
+                        </div>
+
+                        <div class="order-items">
+                            ${order.items.map(item => `
+                                <div class="order-item">
+                                    <div class="item-info">
+                                        <div class="item-name">${item.name}</div>
+                                        <div class="item-description">${item.description}</div>
+                                    </div>
+                                    <div class="item-quantity">${item.quantity}x</div>
+                                    <div class="item-price">R$ ${(item.price * item.quantity).toFixed(2)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <div class="order-total">
+                            <div class="total-amount">Total: R$ ${order.total.toFixed(2)}</div>
+                        </div>
+
+                        <div class="order-actions">
+                            ${this.getActionButtons(order)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Botões de ação baseados no status
+            getActionButtons(order) {
+                switch (order.status) {
+                    case 'pending':
+                        return `
+                            <button class="btn btn-confirm" onclick="cantinaSystem.updateOrderStatus('${order.id}', 'confirmed')">
+                                <i class="fas fa-check"></i> Confirmar Pedido
+                            </button>
+                            <button class="btn btn-cancel" onclick="cantinaSystem.updateOrderStatus('${order.id}', 'cancelled')">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                        `;
+                    case 'confirmed':
+                        return `
+                            <button class="btn btn-preparing" onclick="cantinaSystem.updateOrderStatus('${order.id}', 'preparing')">
+                                <i class="fas fa-fire"></i> Iniciar Preparo
+                            </button>
+                        `;
+                    case 'preparing':
+                        return `
+                            <button class="btn btn-ready" onclick="cantinaSystem.updateOrderStatus('${order.id}', 'ready')">
+                                <i class="fas fa-check-circle"></i> Marcar como Pronto
+                            </button>
+                        `;
+                    case 'ready':
+                        return `
+                            <div style="background: #f0f8f0; padding: 12px; border-radius: 8px; text-align: center; color: #2e7d32;">
+                                <i class="fas fa-truck"></i> Aguardando entregador
+                            </div>
+                        `;
+                    default:
+                        return '';
+                }
+            }
+
+            // Obter texto do status
+            getStatusText(status) {
+                const statusMap = {
+                    'pending': 'Pendente',
+                    'confirmed': 'Confirmado',
+                    'preparing': 'Preparando',
+                    'ready': 'Pronto',
+                    'out_for_delivery': 'Saiu para entrega',
+                    'delivered': 'Entregue',
+                    'cancelled': 'Cancelado'
+                };
+                return statusMap[status] || status;
+            }
+
+            // Calcular tempo decorrido
+            getTimeAgo(timestamp) {
+                if (!timestamp) return 'Agora';
+                
+                const now = new Date();
+                const time = timestamp.toDate();
+                const diffMs = now - time;
+                const diffMins = Math.floor(diffMs / (1000 * 60));
+
+                if (diffMins < 1) return 'Agora mesmo';
+                if (diffMins < 60) return `${diffMins} min atrás`;
+                
+                const diffHours = Math.floor(diffMins / 60);
+                if (diffHours < 24) return `${diffHours}h atrás`;
+                
+                return time.toLocaleDateString('pt-BR');
+            }
+
+            // Notificação
+            showNotification(message, type = 'info') {
+                // Criar elemento de notificação
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${type === 'success' ? '#4caf50' : type === 'error' ? '#f44336' : '#2196f3'};
+                    color: white;
+                    padding: 16px 24px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    z-index: 1000;
+                    animation: slideInRight 0.3s ease;
+                `;
+                notification.textContent = message;
+
+                document.body.appendChild(notification);
+
+                // Remover após 3 segundos
+                setTimeout(() => {
+                    notification.style.animation = 'slideOutRight 0.3s ease';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+        }
+
+        // Instanciar sistema
+        const cantinaSystem = new CantinaSystem();
+
+        // Função global para atualizar
+        function refreshOrders() {
+            cantinaSystem.updateUI();
+            cantinaSystem.showNotification('Pedidos atualizados', 'success');
+        }
+
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Login automático como cantina
+            auth.signInAnonymously().then(() => {
+                console.log('Cantina conectada ao sistema');
+                cantinaSystem.startListening();
+            }).catch(error => {
+                console.error('Erro ao conectar:', error);
+            });
+        });
+
+        // Adicionar estilos de animação
+        const animationStyles = document.createElement('style');
+        animationStyles.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(animationStyles);
+    </script>
+</body>
+</html>
