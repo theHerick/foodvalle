@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOODVALLE Entregador - Delivery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #0066cc;
+            --primary-dark: #004499;
+            --secondary-color: #00b3ff;
+            --accent-color: #ff6600;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-light: #999999;
+            --background: #f5f8fc;
+            --white: #ffffff;
+            --shadow: 0 2px 15px rgba(0, 102, 204, 0.1);
+            --shadow-light: 0 1px 5px rgba(0, 102, 204, 0.08);
+            --border-radius: 16px;
+            --border-radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--white);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo i {
+            font-size: 24px;
+            color: var(--secondary-color);
+        }
+
+        .delivery-status {
+            text-align: right;
+        }
+
+        .status-badge {
+            background: var(--success-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .status-offline {
+            background: #666;
+        }
+
+        .status-text {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .stats-section {
+            padding: 20px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light);
+            text-align: center;
+        }
+
+        .stat-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .toggle-section {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-light);
+        }
+
+        .toggle-control {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle-info {
+            flex: 1;
+        }
+
+        .toggle-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .toggle-description {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 34px;
+            background-color: #ccc;
+            border-radius: 34px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-switch.active {
+            background-color: var(--success-color);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 30px;
+            height: 30px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(26px);
+        }
+
+        .orders-section {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .orders-container {
+            padding: 16px 20px;
+        }
+
+        .delivery-card {
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius-sm);
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .delivery-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-light);
+        }
+
+        .delivery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .order-id {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .distance {
+            background: #e3f2fd;
+            color: var(--primary-color);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .restaurant-info {
+            margin-bottom: 12px;
+        }
+
+        .restaurant-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .address {
+            color: var(--text-secondary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .delivery-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 12px 0;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: var(--border-radius-sm);
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+
+        .info-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .delivery-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-accept {
+            background: var(--success-color);
+            color: var(--white);
+        }
+
+        .btn-accept:hover {
+            background: #45a049;
+        }
+
+        .btn-pickup {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .btn-pickup:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-delivered {
+            background: #9c27b0;
+            color: var(--white);
+        }
+
+        .btn-delivered:hover {
+            background: #7b1fa2;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .current-delivery {
+            background: linear-gradient(135deg, var(--success-color), #45a049);
+            color: var(--white);
+            margin-bottom: 20px;
+        }
+
+        .current-delivery .delivery-card {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .earnings-section {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow-light);
+        }
+
+        .earnings-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .earnings-today {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--success-color);
+            margin-bottom: 4px;
+        }
+
+        .earnings-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            .delivery-actions {
+                flex-direction: column;
+            }
+
+            .delivery-info {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">
+                    <i class="fas fa-motorcycle"></i>
+                    Entregador FOODVALLE
+                </h1>
+                <div class="delivery-status">
+                    <div class="status-badge" id="statusBadge">OFFLINE</div>
+                    <div class="status-text" id="statusText">Clique para ficar online</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="container">
+            <!-- Stats -->
+            <section class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: var(--primary-color);">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div class="stat-number" id="deliveriesToday">0</div>
+                        <div class="stat-label">Entregas Hoje</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: var(--success-color);">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-number" id="earningsToday">R$ 0</div>
+                        <div class="stat-label">Ganhos Hoje</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Toggle Online/Offline -->
+            <section class="toggle-section">
+                <div class="toggle-control">
+                    <div class="toggle-info">
+                        <div class="toggle-title">Status de Entrega</div>
+                        <div class="toggle-description">Ative para receber pedidos</div>
+                    </div>
+                    <div class="toggle-switch" id="onlineToggle" onclick="toggleOnlineStatus()">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Current Delivery -->
+            <section id="currentDeliverySection" style="display: none;">
+                <div class="current-delivery">
+                    <div class="container">
+                        <h3 style="text-align: center; margin-bottom: 16px; color: white;">
+                            <i class="fas fa-route"></i> Entrega em Andamento
+                        </h3>
+                        <div id="currentDeliveryCard"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Available Orders -->
+            <section class="orders-section">
+                <div class="section-header">
+                    <h2 class="section-title">Pedidos Disponíveis</h2>
+                    <button class="refresh-btn" onclick="refreshDeliveries()" style="background: none; border: none; color: var(--primary-color); cursor: pointer;">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="orders-container" id="ordersContainer">
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-motorcycle"></i>
+                        </div>
+                        <p>Fique online para receber pedidos</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Earnings -->
+            <section class="earnings-section">
+                <div class="earnings-header">
+                    <div class="earnings-today" id="totalEarnings">R$ 0,00</div>
+                    <div class="earnings-label">Total de Ganhos Hoje</div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAexCf7hPN2OQvfsw66UDpci6nycivrK98",
+            authDomain: "void-activation-system.firebaseapp.com",
+            databaseURL: "https://void-activation-system-default-rtdb.firebaseio.com",
+            projectId: "void-activation-system",
+            storageBucket: "void-activation-system.firebasestorage.app",
+            messagingSenderId: "194831837355",
+            appId: "1:194831837355:web:8b1c4c8e8c8e8c8e8c8e8c"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        class DeliverySystem {
+            constructor() {
+                this.ordersRef = db.collection('orders');
+                this.deliveriesRef = db.collection('deliveries');
+                this.deliveryId = 'delivery_' + Math.random().toString(36).substr(2, 9);
+                this.isOnline = false;
+                this.currentDelivery = null;
+                this.availableOrders = [];
+                this.todayDeliveries = [];
+                this.unsubscribe = null;
+            }
+
+            // Toggle status online/offline
+            toggleOnlineStatus() {
+                this.isOnline = !this.isOnline;
+                this.updateStatusUI();
+                
+                if (this.isOnline) {
+                    this.startListening();
+                    this.showNotification('Você está online! Aguardando pedidos...', 'success');
+                } else {
+                    this.stopListening();
+                    this.showNotification('Você está offline', 'info');
+                }
+            }
+
+            // Atualizar UI do status
+            updateStatusUI() {
+                const toggle = document.getElementById('onlineToggle');
+                const badge = document.getElementById('statusBadge');
+                const text = document.getElementById('statusText');
+
+                if (this.isOnline) {
+                    toggle.classList.add('active');
+                    badge.textContent = 'ONLINE';
+                    badge.style.background = 'var(--success-color)';
+                    text.textContent = 'Recebendo pedidos';
+                } else {
+                    toggle.classList.remove('active');
+                    badge.textContent = 'OFFLINE';
+                    badge.style.background = '#666';
+                    text.textContent = 'Clique para ficar online';
+                }
+            }
+
+            // Escutar pedidos disponíveis
+            startListening() {
+                this.unsubscribe = this.ordersRef
+                    .where('status', '==', 'ready')
+                    .orderBy('createdAt', 'desc')
+                    .onSnapshot((snapshot) => {
+                        this.availableOrders = snapshot.docs.map(doc => ({ 
+                            id: doc.id, 
+                            ...doc.data() 
+                        }));
+                        this.renderAvailableOrders();
+                    });
+            }
+
+            // Parar de escutar
+            stopListening() {
+                if (this.unsubscribe) {
+                    this.unsubscribe();
+                }
+                this.renderAvailableOrders([]); // Limpar lista
+            }
+
+            // Aceitar entrega
+            async acceptDelivery(orderId) {
+                try {
+                    // Atualizar status do pedido
+                    await this.ordersRef.doc(orderId).update({
+                        status: 'out_for_delivery',
+                        deliveryId: this.deliveryId,
+                        pickedUpAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // Criar registro de entrega
+                    const deliveryData = {
+                        orderId: orderId,
+                        deliveryId: this.deliveryId,
+                        status: 'picked_up',
+                        pickedUpAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        fee: 5.00 // Taxa fixa de entrega
+                    };
+
+                    await this.deliveriesRef.doc(orderId).set(deliveryData);
+
+                    // Definir como entrega atual
+                    const order = this.availableOrders.find(o => o.id === orderId);
+                    this.currentDelivery = { ...order, ...deliveryData };
+                    
+                    this.showCurrentDelivery();
+                    this.showNotification('Entrega aceita! Retire o pedido no restaurante.', 'success');
+                } catch (error) {
+                    console.error('Erro ao aceitar entrega:', error);
+                    this.showNotification('Erro ao aceitar entrega', 'error');
+                }
+            }
+
+            // Marcar como entregue
+            async markAsDelivered(orderId) {
+                try {
+                    await this.ordersRef.doc(orderId).update({
+                        status: 'delivered',
+                        deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    await this.deliveriesRef.doc(orderId).update({
+                        status: 'delivered',
+                        deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // Adicionar aos ganhos de hoje
+                    this.todayDeliveries.push(this.currentDelivery);
+                    this.currentDelivery = null;
+                    
+                    this.hideCurrentDelivery();
+                    this.updateStats();
+                    this.showNotification('Entrega concluída! +R$ 5,00', 'success');
+                } catch (error) {
+                    console.error('Erro ao finalizar entrega:', error);
+                    this.showNotification('Erro ao finalizar entrega', 'error');
+                }
+            }
+
+            // Renderizar pedidos disponíveis
+            renderAvailableOrders() {
+                const container = document.getElementById('ordersContainer');
+                
+                if (!this.isOnline) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-power-off"></i>
+                            </div>
+                            <p>Você está offline</p>
+                            <small>Ative o status online para receber pedidos</small>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (this.availableOrders.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <p>Nenhum pedido disponível</p>
+                            <small>Novos pedidos aparecerão aqui automaticamente</small>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = this.availableOrders.map(order => this.renderDeliveryCard(order)).join('');
+            }
+
+            // Renderizar card de entrega
+            renderDeliveryCard(order) {
+                const distance = this.calculateDistance(order.deliveryAddress);
+                const fee = 5.00; // Taxa fixa
+
+                return `
+                    <div class="delivery-card">
+                        <div class="delivery-header">
+                            <div class="order-id">#${order.id}</div>
+                            <div class="distance">${distance} km</div>
+                        </div>
+
+                        <div class="restaurant-info">
+                            <div class="restaurant-name">${order.restaurantName}</div>
+                            <div class="address">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Para: ${order.deliveryAddress}
+                            </div>
+                        </div>
+
+                        <div class="delivery-info">
+                            <div class="info-item">
+                                <div class="info-label">Taxa de Entrega</div>
+                                <div class="info-value">R$ ${fee.toFixed(2)}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Valor do Pedido</div>
+                                <div class="info-value">R$ ${order.total.toFixed(2)}</div>
+                            </div>
+                        </div>
+
+                        <div class="delivery-actions">
+                            <button class="btn btn-accept" onclick="deliverySystem.acceptDelivery('${order.id}')">
+                                <i class="fas fa-check"></i> Aceitar Entrega
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Mostrar entrega atual
+            showCurrentDelivery() {
+                const section = document.getElementById('currentDeliverySection');
+                const container = document.getElementById('currentDeliveryCard');
+                
+                if (!this.currentDelivery) return;
+
+                container.innerHTML = `
+                    <div class="delivery-card">
+                        <div class="delivery-header">
+                            <div class="order-id">#${this.currentDelivery.id}</div>
+                            <div style="color: white; font-weight: 600;">
+                                <i class="fas fa-route"></i> Em andamento
+                            </div>
+                        </div>
+
+                        <div class="restaurant-info">
+                            <div class="restaurant-name">${this.currentDelivery.restaurantName}</div>
+                            <div class="address" style="color: rgba(255,255,255,0.9);">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Para: ${this.currentDelivery.deliveryAddress}
+                            </div>
+                        </div>
+
+                        <div class="delivery-actions">
+                            <button class="btn btn-delivered" onclick="deliverySystem.markAsDelivered('${this.currentDelivery.id}')" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">
+                                <i class="fas fa-check-circle"></i> Marcar como Entregue
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                section.style.display = 'block';
+            }
+
+            // Esconder entrega atual
+            hideCurrentDelivery() {
+                document.getElementById('currentDeliverySection').style.display = 'none';
+            }
+
+            // Calcular distância (simulada)
+            calculateDistance(address) {
+                // Simulação simples baseada no endereço
+                const distances = {
+                    'UNIVALI - Campus 1': 0.5,
+                    'UNIVALI - Campus 2': 1.2,
+                    'UNIVALI - Campus 3': 2.1,
+                    'Centro de Itajaí': 3.5,
+                    'default': 2.0
+                };
+                return distances[address] || distances.default;
+            }
+
+            // Atualizar estatísticas
+            updateStats() {
+                const deliveriesCount = this.todayDeliveries.length;
+                const earnings = deliveriesCount * 5.00; // R$ 5 por entrega
+
+                document.getElementById('deliveriesToday').textContent = deliveriesCount;
+                document.getElementById('earningsToday').textContent = `R$ ${earnings.toFixed(2)}`;
+                document.getElementById('totalEarnings').textContent = `R$ ${earnings.toFixed(2)}`;
+            }
+
+            // Notificação
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${type === 'success' ? '#4caf50' : type === 'error' ? '#f44336' : '#2196f3'};
+                    color: white;
+                    padding: 16px 24px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    z-index: 1000;
+                    max-width: 300px;
+                    animation: slideInRight 0.3s ease;
+                `;
+                notification.textContent = message;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.style.animation = 'slideOutRight 0.3s ease';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+        }
+
+        // Instanciar sistema
+        const deliverySystem = new DeliverySystem();
+
+        // Funções globais
+        function toggleOnlineStatus() {
+            deliverySystem.toggleOnlineStatus();
+        }
+
+        function refreshDeliveries() {
+            if (deliverySystem.isOnline) {
+                deliverySystem.renderAvailableOrders();
+                deliverySystem.showNotification('Lista atualizada', 'success');
+            }
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Login automático como entregador
+            auth.signInAnonymously().then(() => {
+                console.log('Entregador conectado ao sistema');
+                deliverySystem.updateStats();
+            }).catch(error => {
+                console.error('Erro ao conectar:', error);
+            });
+        });
+
+        // Adicionar estilos de animação
+        const animationStyles = document.createElement('style');
+        animationStyles.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+            .refresh-btn {
+                background: none;
+                border: none;
+                color: var(--primary-color);
+                cursor: pointer;
+                padding: 8px;
+                border-radius: 50%;
+                transition: background 0.3s ease;
+            }
+            .refresh-btn:hover {
+                background: rgba(0, 102, 204, 0.1);
+            }
+        `;
+        document.head.appendChild(animationStyles);
+    </script>
+</body>
+</html>
