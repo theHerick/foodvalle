@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOODVALLE - Marmitas Universitárias</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #ff6b35;
+            --primary-dark: #e55a2b;
+            --secondary-color: #4caf50;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-light: #999999;
+            --background: #f8f9fa;
+            --white: #ffffff;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--white);
+            padding: 12px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo i {
+            font-size: 24px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-location {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: var(--white);
+            padding: 8px 12px;
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .btn-location:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-profile {
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* Search Section */
+        .search-section {
+            background: var(--white);
+            padding: 16px 0;
+            box-shadow: var(--shadow-light);
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: var(--background);
+            border-radius: var(--border-radius);
+            padding: 12px 16px;
+            gap: 12px;
+        }
+
+        .search-bar i {
+            color: var(--text-light);
+            font-size: 18px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            border: none;
+            background: none;
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        .search-bar input::placeholder {
+            color: var(--text-light);
+        }
+
+        .filter-btn {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* Banner Section */
+        .banner-section {
+            padding: 20px 0;
+        }
+
+        .banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--white);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .banner-content h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .banner-content p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .btn-banner {
+            background: var(--white);
+            color: var(--primary-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--border-radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-banner:hover {
+            transform: translateY(-2px);
+        }
+
+        .banner-image {
+            font-size: 48px;
+            opacity: 0.3;
+        }
+
+        /* Categories Section */
+        .categories-section {
+            padding: 24px 0;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .see-all {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .category-item {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 20px 16px;
+            text-align: center;
+            box-shadow: var(--shadow-light);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .category-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .category-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            color: var(--white);
+            font-size: 20px;
+        }
+
+        .category-item span {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Restaurants Section */
+        .restaurants-section {
+            padding: 24px 0;
+        }
+
+        .restaurants-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .restaurant-card {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-light);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .restaurant-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .restaurant-image {
+            position: relative;
+            height: 140px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--text-light);
+        }
+
+        .restaurant-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .restaurant-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--white);
+            padding: 4px 8px;
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .restaurant-badge i {
+            color: #ffd700;
+            font-size: 10px;
+        }
+
+        .delivery-time {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--white);
+            color: var(--text-primary);
+            padding: 4px 8px;
+            border-radius: var(--border-radius-sm);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .restaurant-info {
+            padding: 16px;
+        }
+
+        .restaurant-info h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .restaurant-info p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .restaurant-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .delivery-fee {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .discount {
+            background: var(--secondary-color);
+            color: var(--white);
+            padding: 4px 8px;
+            border-radius: var(--border-radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Promotions Section */
+        .promotions-section {
+            padding: 24px 0;
+        }
+
+        .promotion-card {
+            background: linear-gradient(135deg, var(--secondary-color), #45a049);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--white);
+        }
+
+        .promotion-content h4 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .promotion-content p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .btn-promotion {
+            background: var(--white);
+            color: var(--secondary-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--border-radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-promotion:hover {
+            transform: translateY(-2px);
+        }
+
+        .promotion-image {
+            font-size: 48px;
+            opacity: 0.3;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: var(--white);
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--text-light);
+            font-size: 12px;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-item i {
+            font-size: 20px;
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            background: var(--primary-color);
+            color: var(--white);
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal-content {
+            padding: 16px;
+        }
+
+        .cart-item, .menu-item, .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .cart-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cart-item-actions button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .btn-add, .btn-checkout {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .cart-total {
+            text-align: center;
+            padding: 16px 0;
+            font-size: 18px;
+        }
+
+        .location-option {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+
+        .location-option:hover {
+            background: #f8f9fa;
+        }
+
+        .profile-info {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .profile-avatar i {
+            font-size: 64px;
+            color: var(--primary-color);
+        }
+
+        .profile-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .profile-option:hover {
+            background: #f8f9fa;
+        }
+
+        /* Toast Styles */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text-primary);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1001;
+            animation: toastIn 0.3s ease;
+            max-width: 300px;
+            text-align: center;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, 20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 12px;
+            }
+            
+            .categories-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+            }
+            
+            .category-item {
+                padding: 16px 12px;
+            }
+            
+            .category-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+            
+            .banner {
+                padding: 20px;
+            }
+            
+            .banner-content h2 {
+                font-size: 18px;
+            }
+            
+            .restaurant-info {
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .header-content {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .btn-location span {
+                display: none;
+            }
+            
+            .categories-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Animações */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .restaurant-card,
+        .category-item,
+        .banner,
+        .promotion-card {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .price {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">
+                    <i class="fas fa-utensils"></i>
+                    FOODVALLE
+                </h1>
+                <div class="header-actions">
+                    <button class="btn-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>UNIVALI - Campus 1</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <button class="btn-profile">
+                        <i class="fas fa-user-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search Bar -->
+    <section class="search-section">
+        <div class="container">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Buscar marmitas, restaurantes...">
+                <button class="filter-btn">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Banner Promocional -->
+    <section class="banner-section">
+        <div class="container">
+            <div class="banner">
+                <div class="banner-content">
+                    <h2>Primeira compra com 20% OFF!</h2>
+                    <p>Use o cupom BEMVINDO e economize na sua primeira marmita</p>
+                    <button class="btn-banner">Pedir Agora</button>
+                </div>
+                <div class="banner-image">
+                    <i class="fas fa-box-open"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categorias -->
+    <section class="categories-section">
+        <div class="container">
+            <div class="section-header">
+                <h3>Categorias</h3>
+                <a href="#" class="see-all">Ver todas</a>
+            </div>
+            <div class="categories-grid">
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-drumstick-bite"></i>
+                    </div>
+                    <span>Tradicional</span>
+                </div>
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <span>Vegetariana</span>
+                </div>
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <span>Fitness</span>
+                </div>
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-pizza-slice"></i>
+                    </div>
+                    <span>Lanches</span>
+                </div>
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-ice-cream"></i>
+                    </div>
+                    <span>Sobremesas</span>
+                </div>
+                <div class="category-item">
+                    <div class="category-icon">
+                        <i class="fas fa-coffee"></i>
+                    </div>
+                    <span>Bebidas</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Restaurantes Populares -->
+    <section class="restaurants-section">
+        <div class="container">
+            <div class="section-header">
+                <h3>Populares perto de você</h3>
+                <a href="#" class="see-all">Ver todos</a>
+            </div>
+            <div class="restaurants-grid">
+                <div class="restaurant-card" data-restaurant="1">
+                    <div class="restaurant-image">
+                        <i class="fas fa-utensils"></i>
+                        <div class="restaurant-badge">
+                            <i class="fas fa-star"></i>
+                            <span>4.8</span>
+                        </div>
+                        <div class="delivery-time">25-35 min</div>
+                    </div>
+                    <div class="restaurant-info">
+                        <h4>Cantina da Vó</h4>
+                        <p>Comida caseira • Marmitas tradicionais</p>
+                        <div class="restaurant-footer">
+                            <span class="delivery-fee">Entrega R$ 2,99</span>
+                            <span class="discount">20% OFF</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="restaurant-card" data-restaurant="2">
+                    <div class="restaurant-image">
+                        <i class="fas fa-dumbbell"></i>
+                        <div class="restaurant-badge">
+                            <i class="fas fa-star"></i>
+                            <span>4.9</span>
+                        </div>
+                        <div class="delivery-time">30-40 min</div>
+                    </div>
+                    <div class="restaurant-info">
+                        <h4>Fit Marmitas</h4>
+                        <p>Saudável • Low carb • Fitness</p>
+                        <div class="restaurant-footer">
+                            <span class="delivery-fee">Entrega R$ 3,50</span>
+                            <span class="discount">15% OFF</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="restaurant-card" data-restaurant="3">
+                    <div class="restaurant-image">
+                        <i class="fas fa-graduation-cap"></i>
+                        <div class="restaurant-badge">
+                            <i class="fas fa-star"></i>
+                            <span>4.7</span>
+                        </div>
+                        <div class="delivery-time">20-30 min</div>
+                    </div>
+                    <div class="restaurant-info">
+                        <h4>Sabor Universitário</h4>
+                        <p>Marmitas • Preços estudantis</p>
+                        <div class="restaurant-footer">
+                            <span class="delivery-fee">Entrega GRÁTIS</span>
+                            <span class="discount">Novo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="restaurant-card" data-restaurant="4">
+                    <div class="restaurant-image">
+                        <i class="fas fa-seedling"></i>
+                        <div class="restaurant-badge">
+                            <i class="fas fa-star"></i>
+                            <span>4.6</span>
+                        </div>
+                        <div class="delivery-time">35-45 min</div>
+                    </div>
+                    <div class="restaurant-info">
+                        <h4>Vegetaria Verde</h4>
+                        <p>Vegetariana • Vegana • Orgânico</p>
+                        <div class="restaurant-footer">
+                            <span class="delivery-fee">Entrega R$ 2,50</span>
+                            <span class="discount">10% OFF</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Promoções -->
+    <section class="promotions-section">
+        <div class="container">
+            <div class="section-header">
+                <h3>Promoções especiais</h3>
+            </div>
+            <div class="promotion-card">
+                <div class="promotion-content">
+                    <h4>Combo Estudante</h4>
+                    <p>Marmita + Refrigerante por apenas R$ 12,90</p>
+                    <button class="btn-promotion">Aproveitar</button>
+                </div>
+                <div class="promotion-image">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="nav-item active">
+            <i class="fas fa-home"></i>
+            <span>Início</span>
+        </div>
+        <div class="nav-item">
+            <i class="fas fa-search"></i>
+            <span>Buscar</span>
+        </div>
+        <div class="nav-item">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Carrinho</span>
+            <div class="cart-badge" style="display: none;">0</div>
+        </div>
+        <div class="nav-item">
+            <i class="fas fa-receipt"></i>
+            <span>Pedidos</span>
+        </div>
+        <div class="nav-item">
+            <i class="fas fa-user"></i>
+            <span>Perfil</span>
+        </div>
+    </nav>
+
+    <script>
+        // Dados dos restaurantes
+        const restaurants = {
+            1: {
+                name: "Cantina da Vó",
+                category: "Comida caseira • Marmitas tradicionais",
+                rating: 4.8,
+                deliveryTime: "25-35 min",
+                deliveryFee: "R$ 2,99",
+                discount: "20% OFF",
+                menu: [
+                    { id: 'marmita-1', name: 'Marmita Tradicional', price: 15.90, description: 'Arroz, feijão, bife acebolado, farofa e salada' },
+                    { id: 'marmita-2', name: 'Marmita Frango', price: 14.90, description: 'Arroz, feijão, frango grelhado e legumes' },
+                    { id: 'marmita-3', name: 'Marmita Peixe', price: 18.90, description: 'Arroz, feijão, peixe assado e salada verde' }
+                ]
+            },
+            2: {
+                name: "Fit Marmitas",
+                category: "Saudável • Low carb • Fitness",
+                rating: 4.9,
+                deliveryTime: "30-40 min",
+                deliveryFee: "R$ 3,50",
+                discount: "15% OFF",
+                menu: [
+                    { id: 'fit-1', name: 'Marmita Fit Frango', price: 18.90, description: 'Arroz integral, frango grelhado, batata doce e brócolis' },
+                    { id: 'fit-2', name: 'Marmita Low Carb', price: 19.90, description: 'Salada mix, salmão grelhado, abacate e castanhas' },
+                    { id: 'fit-3', name: 'Marmita Proteica', price: 22.90, description: 'Quinoa, peito de frango, ovo e legumes no vapor' }
+                ]
+            },
+            3: {
+                name: "Sabor Universitário",
+                category: "Marmitas • Preços estudantis",
+                rating: 4.7,
+                deliveryTime: "20-30 min",
+                deliveryFee: "GRÁTIS",
+                discount: "Novo",
+                menu: [
+                    { id: 'univ-1', name: 'Marmita Econômica', price: 12.90, description: 'Arroz, feijão, ovo frito e salada simples' },
+                    { id: 'univ-2', name: 'Marmita Completa', price: 15.90, description: 'Arroz, feijão, carne moída, batata frita e salada' },
+                    { id: 'univ-3', name: 'Marmita Especial', price: 17.90, description: 'Arroz, feijão, bife, linguiça, ovo e salada' }
+                ]
+            },
+            4: {
+                name: "Vegetaria Verde",
+                category: "Vegetariana • Vegana • Orgânico",
+                rating: 4.6,
+                deliveryTime: "35-45 min",
+                deliveryFee: "R$ 2,50",
+                discount: "10% OFF",
+                menu: [
+                    { id: 'veg-1', name: 'Marmita Vegetariana', price: 16.90, description: 'Quinoa, proteína de soja, legumes orgânicos' },
+                    { id: 'veg-2', name: 'Marmita Vegana', price: 18.90, description: 'Arroz integral, grão de bico, tofu grelhado e salada' },
+                    { id: 'veg-3', name: 'Marmita Detox', price: 19.90, description: 'Salada de folhas verdes, legumes no vapor e tahine' }
+                ]
+            }
+        };
+
+        // Variável do carrinho
+        let cart = JSON.parse(localStorage.getItem('foodvalle_cart')) || [];
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartBadge();
+            setupEventListeners();
+            setupSearchFunctionality();
+        });
+
+        // Event listeners
+        function setupEventListeners() {
+            // Bottom navigation
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', handleNavClick);
+            });
+
+            // Restaurant cards
+            const restaurantCards = document.querySelectorAll('.restaurant-card');
+            restaurantCards.forEach(card => {
+                card.addEventListener('click', handleRestaurantClick);
+            });
+
+            // Categories
+            const categoryItems = document.querySelectorAll('.category-item');
+            categoryItems.forEach(item => {
+                item.addEventListener('click', handleCategoryClick);
+            });
+
+            // Buttons
+            document.querySelector('.btn-banner').addEventListener('click', handleBannerClick);
+            document.querySelector('.btn-promotion').addEventListener('click', handlePromotionClick);
+            document.querySelector('.filter-btn').addEventListener('click', handleFilterClick);
+            document.querySelector('.btn-location').addEventListener('click', showLocationSelector);
+            document.querySelector('.btn-profile').addEventListener('click', () => {
+                // Set profile as active nav
+                const navItems = document.querySelectorAll('.nav-item');
+                navItems.forEach(item => item.classList.remove('active'));
+                document.querySelectorAll('.nav-item')[4].classList.add('active');
+                showProfile();
+            });
+        }
+
+        // Navegação inferior
+        function handleNavClick(event) {
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            const navText = event.currentTarget.querySelector('span').textContent;
+            
+            switch(navText) {
+                case 'Início':
+                    // Já na página inicial
+                    break;
+                case 'Buscar':
+                    focusSearchInput();
+                    break;
+                case 'Carrinho':
+                    showCart();
+                    break;
+                case 'Pedidos':
+                    showOrders();
+                    break;
+                case 'Perfil':
+                    showProfile();
+                    break;
+            }
+        }
+
+        // Clique no restaurante
+        function handleRestaurantClick(event) {
+            const restaurantId = event.currentTarget.getAttribute('data-restaurant');
+            const restaurant = restaurants[restaurantId];
+            showRestaurantMenu(restaurant);
+        }
+
+        // Clique na categoria
+        function handleCategoryClick(event) {
+            const categoryName = event.currentTarget.querySelector('span').textContent;
+            showToast(`Buscando por ${categoryName}...`);
+        }
+
+        // Banner click
+        function handleBannerClick() {
+            showToast('Cupom BEMVINDO aplicado!');
+        }
+
+        // Promoção click
+        function handlePromotionClick() {
+            addToCart({
+                id: 'combo-estudante',
+                name: 'Combo Estudante',
+                price: 12.90,
+                description: 'Marmita + Refrigerante'
+            });
+        }
+
+        // Funcionalidade de busca
+        function setupSearchFunctionality() {
+            const searchInput = document.querySelector('.search-bar input');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    const query = e.target.value.toLowerCase();
+                    if (query.length > 2) {
+                        performSearch(query);
+                    }
+                }, 500);
+            });
+        }
+
+        function performSearch(query) {
+            showToast(`Buscando por "${query}"...`);
+        }
+
+        function focusSearchInput() {
+            const searchInput = document.querySelector('.search-bar input');
+            searchInput.focus();
+            searchInput.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Filtros
+        function handleFilterClick() {
+            showToast('Abrindo filtros...');
+        }
+
+        // Seletor de localização
+        function showLocationSelector() {
+            const locations = [
+                'UNIVALI - Campus 1',
+                'UNIVALI - Campus 2', 
+                'UNIVALI - Campus 3',
+                'UFSC - Campus Trindade',
+                'UDESC - Campus Centro'
+            ];
+
+            let locationList = locations.map(location => 
+                `<div class="location-option" onclick="selectLocation('${location}')">${location}</div>`
+            ).join('');
+
+            showModal('Selecionar Localização', `
+                <div class="location-selector">
+                    ${locationList}
+                </div>
+            `);
+        }
+
+        function selectLocation(location) {
+            document.querySelector('.btn-location span').textContent = location;
+            closeModal();
+            showToast(`Localização alterada para ${location}`);
+        }
+
+        // Carrinho de compras
+        function addToCart(item) {
+            const existingItem = cart.find(cartItem => cartItem.id === item.id);
+            
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                cart.push({ ...item, quantity: 1 });
+            }
+            
+            saveCart();
+            updateCartBadge();
+            showToast(`${item.name} adicionado ao carrinho!`);
+        }
+
+        function updateQuantity(itemId, change) {
+            const item = cart.find(cartItem => cartItem.id === itemId);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) {
+                    cart = cart.filter(cartItem => cartItem.id !== itemId);
+                }
+                saveCart();
+                updateCartBadge();
+                showCart(); // Refresh cart display
+            }
+        }
+
+        function updateCartBadge() {
+            const badge = document.querySelector('.cart-badge');
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            
+            if (totalItems > 0) {
+                badge.textContent = totalItems;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function saveCart() {
+            localStorage.setItem('foodvalle_cart', JSON.stringify(cart));
+        }
+
+        function showCart() {
+            if (cart.length === 0) {
+                showModal('Carrinho', '<p style="text-align: center; padding: 20px; color: #666;">Seu carrinho está vazio<br><small>Adicione alguns itens deliciosos!</small></p>');
+                return;
+            }
+
+            let cartHTML = cart.map(item => `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <h4>${item.name}</h4>
+                        <p>${item.description}</p>
+                        <span class="price">R$ ${item.price.toFixed(2)}</span>
+                    </div>
+                    <div class="cart-item-actions">
+                        <button onclick="updateQuantity('${item.id}', -1)">-</button>
+                        <span>${item.quantity}</span>
+                        <button onclick="updateQuantity('${item.id}', 1)">+</button>
+                    </div>
+                </div>
+            `).join('');
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            cartHTML += `
+                <div class="cart-total">
+                    <strong>Total: R$ ${total.toFixed(2)}</strong>
+                </div>
+                <button class="btn-checkout" onclick="checkout()">Finalizar Pedido</button>
+            `;
+
+            showModal('Carrinho', cartHTML);
+        }
+
+        function checkout() {
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            showToast(`Pedido de R$ ${total.toFixed(2)} enviado!`);
+            cart = [];
+            saveCart();
+            updateCartBadge();
+            closeModal();
+        }
+
+        // Menu do restaurante
+        function showRestaurantMenu(restaurant) {
+            let menuHTML = restaurant.menu.map(item => `
+                <div class="menu-item">
+                    <div class="menu-item-info">
+                        <h4>${item.name}</h4>
+                        <p>${item.description}</p>
+                        <span class="price">R$ ${item.price.toFixed(2)}</span>
+                    </div>
+                    <button onclick="addToCart({id:'${item.id}', name:'${item.name}', price:${item.price}, description:'${item.description}'})" class="btn-add">Adicionar</button>
+                </div>
+            `).join('');
+
+            const headerInfo = `
+                <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+                    <p style="color: #666; margin-bottom: 5px;">${restaurant.category}</p>
+                    <div style="display: flex; justify-content: center; gap: 15px; align-items: center;">
+                        <span style="display: flex; align-items: center; gap: 3px;">
+                            <i class="fas fa-star" style="color: gold; font-size: 12px;"></i> ${restaurant.rating}
+                        </span>
+                        <span style="color: #666; font-size: 14px;">${restaurant.deliveryTime}</span>
+                        <span style="color: #666; font-size: 14px;">Entrega ${restaurant.deliveryFee}</span>
+                    </div>
+                </div>
+            `;
+
+            showModal(restaurant.name, headerInfo + menuHTML);
+        }
+
+        // Pedidos
+        function showOrders() {
+            const orders = [
+                { id: 1, restaurant: 'Cantina da Vó', status: 'Em preparo', total: 15.90, time: 'Chega em 25-35 min', statusColor: '#ff9800' },
+                { id: 2, restaurant: 'Fit Marmitas', status: 'Entregue', total: 18.90, time: 'Entregue às 12:30', statusColor: '#4caf50' }
+            ];
+
+            let ordersHTML = orders.map(order => `
+                <div class="order-item">
+                    <div class="order-info">
+                        <h4>${order.restaurant}</h4>
+                        <p style="color: ${order.statusColor}; font-weight: 600;">● ${order.status}</p>
+                        <p style="color: #666; font-size: 14px;">${order.time}</p>
+                        <span class="price">R$ ${order.total.toFixed(2)}</span>
+                    </div>
+                    <div>
+                        <button class="btn-add" onclick="showToast('Pedindo novamente...')" style="font-size: 12px; padding: 6px 12px;">Pedir Novamente</button>
+                    </div>
+                </div>
+            `).join('');
+
+            if (cart.length > 0) {
+                ordersHTML = `
+                    <div class="order-item" style="background: #f0f8f0; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                        <div class="order-info">
+                            <h4 style="color: #2e7d32;">Carrinho Atual</h4>
+                            <p style="color: #4caf50; font-weight: 600;">● ${cart.length} ${cart.length === 1 ? 'item' : 'itens'} no carrinho</p>
+                            <span class="price">R$ ${cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+                        </div>
+                        <div>
+                            <button class="btn-add" onclick="showCart()" style="background: #4caf50;">Finalizar</button>
+                        </div>
+                    </div>
+                ` + ordersHTML;
+            }
+
+            showModal('Meus Pedidos', ordersHTML || '<p style="text-align: center; padding: 20px; color: #666;">Nenhum pedido encontrado</p>');
+        }
+
+        // Perfil
+        function showProfile() {
+            const profileHTML = `
+                <div class="profile-info">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <h3>João Silva</h3>
+                    <p style="color: #666;">joao.silva@univali.br</p>
+                    <p style="color: #666; font-size: 14px;">Estudante - Ciência da Computação</p>
+                </div>
+                <div class="profile-options">
+                    <div class="profile-option" onclick="showToast('Editando perfil...')">
+                        <i class="fas fa-edit"></i>
+                        <span>Editar Perfil</span>
+                        <i class="fas fa-chevron-right" style="margin-left: auto; color: #ccc;"></i>
+                    </div>
+                    <div class="profile-option" onclick="showToast('Abrindo endereços...')">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Meus Endereços</span>
+                        <i class="fas fa-chevron-right" style="margin-left: auto; color: #ccc;"></i>
+                    </div>
+                    <div class="profile-option" onclick="showToast('Você tem 3 cupons disponíveis!')">
+                        <i class="fas fa-ticket-alt"></i>
+                        <span>Meus Cupons</span>
+                        <i class="fas fa-chevron-right" style="margin-left: auto; color: #ccc;"></i>
+                    </div>
+                    <div class="profile-option" onclick="showToast('Abrindo configurações...')">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                        <i class="fas fa-chevron-right" style="margin-left: auto; color: #ccc;"></i>
+                    </div>
+                    <div class="profile-option" onclick="showToast('Obrigado por usar o FOODVALLE!')">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Sair</span>
+                        <i class="fas fa-chevron-right" style="margin-left: auto; color: #ccc;"></i>
+                    </div>
+                </div>
+            `;
+
+            showModal('Perfil', profileHTML);
+        }
+
+        // Modal genérico
+        function showModal(title, content) {
+            closeModal(); // Close any existing modal
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal">
+                    <div class="modal-header">
+                        <h3>${title}</h3>
+                        <button class="modal-close" onclick="closeModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-content">
+                        ${content}
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            
+            // Add click outside to close
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        }
+
+        function closeModal() {
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Toast notifications
+        function showToast(message, duration = 3000) {
+            // Remove toast anterior se existir
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, duration);
+        }
+
+        // Adicionar algumas animações na inicialização
+        window.addEventListener('load', () => {
+            // Animar cards dos restaurantes
+            const cards = document.querySelectorAll('.restaurant-card, .category-item');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
+</body>
+</html>
