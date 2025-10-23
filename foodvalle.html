@@ -983,73 +983,11 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        // Dados dos restaurantes UNIVALI
-        const restaurants = {
-            1: {
-                name: "Cantina Central UNIVALI",
-                category: "Comida caseira • Preços estudantis",
-                rating: 4.8,
-                deliveryTime: "15-25 min",
-                deliveryFee: "GRÁTIS",
-                discount: "20% OFF",
-                location: "Campus 1 - Bloco A",
-                phone: "(47) 3341-7500",
-                menu: [
-                    { id: 'cantina-1', name: 'Marmita Executiva', price: 12.90, description: 'Arroz, feijão, bife acebolado, batata frita e salada verde' },
-                    { id: 'cantina-2', name: 'Marmita Light', price: 11.90, description: 'Arroz integral, frango grelhado, legumes no vapor' },
-                    { id: 'cantina-3', name: 'Marmita Vegetariana', price: 10.90, description: 'Arroz, feijão, omelete, legumes refogados e salada' }
-                ]
-            },
-            2: {
-                name: "Fit UNIVALI",
-                category: "Saudável • Fitness • Academia",
-                rating: 4.9,
-                deliveryTime: "20-30 min",
-                deliveryFee: "R$ 2,50",
-                discount: "15% OFF",
-                location: "Próximo à Academia UNIVALI",
-                phone: "(47) 99999-1234",
-                menu: [
-                    { id: 'fit-1', name: 'Marmita Proteica', price: 18.90, description: 'Frango grelhado, batata doce, brócolis e quinoa' },
-                    { id: 'fit-2', name: 'Low Carb', price: 19.90, description: 'Salmão grelhado, salada completa, abacate e castanhas' },
-                    { id: 'fit-3', name: 'Pre-Treino', price: 16.90, description: 'Peito de frango, arroz integral, banana e whey' }
-                ]
-            },
-            3: {
-                name: "Sabores da Vila",
-                category: "Regional • Comida caseira",
-                rating: 4.7,
-                deliveryTime: "25-35 min",
-                deliveryFee: "R$ 3,00",
-                discount: "Novo",
-                location: "Centro de Itajaí",
-                phone: "(47) 88888-5678",
-                menu: [
-                    { id: 'vila-1', name: 'Marmita Catarinense', price: 15.90, description: 'Arroz, feijão, linguiça blumenau, polenta e couve' },
-                    { id: 'vila-2', name: 'Peixe do Dia', price: 17.90, description: 'Arroz, pirão, peixe do dia grelhado e salada' },
-                    { id: 'vila-3', name: 'Tradição Açoriana', price: 16.90, description: 'Arroz, feijão, carne de porco e mandioca' }
-                ]
-            },
-            4: {
-                name: "Verde & Natural",
-                category: "Vegetariano • Vegano • Orgânico",
-                rating: 4.6,
-                deliveryTime: "30-40 min",
-                deliveryFee: "R$ 2,00",
-                discount: "10% OFF",
-                location: "Campus 2 - Medicina",
-                phone: "(47) 77777-9876",
-                menu: [
-                    { id: 'verde-1', name: 'Bowl Vegano', price: 16.90, description: 'Quinoa, grão de bico, tofu, legumes orgânicos' },
-                    { id: 'verde-2', name: 'Proteína Vegetal', price: 15.90, description: 'PTS, arroz integral, legumes e tahine' },
-                    { id: 'verde-3', name: 'Detox Completo', price: 18.90, description: 'Salada de folhas, sementes, frutas e molho especial' }
-                ]
-            }
-        };
-
-        // Variável do carrinho
+        // Variáveis globais
         let cart = JSON.parse(localStorage.getItem('foodvalle_cart')) || [];
         let currentUser = null;
+        let userType = localStorage.getItem('foodvalle_userType') || null;
+        let restaurants = [];
 
         // Sistema de autenticação e pedidos Firebase
         class FoodValleSystem {
@@ -1058,6 +996,178 @@
                 this.restaurantsRef = db.collection('restaurants');
                 this.deliveryRef = db.collection('deliveries');
                 this.usersRef = db.collection('users');
+                this.productsRef = db.collection('products');
+            }
+
+            // Autenticação
+            async login(email, password, type) {
+                try {
+                    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                    currentUser = userCredential.user;
+                    userType = type;
+                    localStorage.setItem('foodvalle_userType', type);
+                    
+                    // Salvar/atualizar dados do usuário
+                    await this.usersRef.doc(currentUser.uid).set({
+                        email: email,
+                        type: type,
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                    
+                    return currentUser;
+                } catch (error) {
+                    console.error('Erro no login:', error);
+                    throw error;
+                }
+            }
+
+            async register(email, password, type, additionalData = {}) {
+                try {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    currentUser = userCredential.user;
+                    userType = type;
+                    localStorage.setItem('foodvalle_userType', type);
+                    
+                    // Salvar dados do usuário
+                    await this.usersRef.doc(currentUser.uid).set({
+                        email: email,
+                        type: type,
+                        ...additionalData,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    return currentUser;
+                } catch (error) {
+                    console.error('Erro no registro:', error);
+                    throw error;
+                }
+            }
+
+            async logout() {
+                try {
+                    await auth.signOut();
+                    currentUser = null;
+                    userType = null;
+                    localStorage.removeItem('foodvalle_userType');
+                    cart = [];
+                    localStorage.removeItem('foodvalle_cart');
+                } catch (error) {
+                    console.error('Erro no logout:', error);
+                    throw error;
+                }
+            }
+
+            // Restaurantes/Cantinas
+            async createRestaurant(restaurantData) {
+                try {
+                    if (!currentUser || userType !== 'cantina') {
+                        throw new Error('Acesso negado. Apenas cantinas podem criar restaurantes.');
+                    }
+                    
+                    const restaurantId = this.restaurantsRef.doc().id;
+                    const restaurant = {
+                        ...restaurantData,
+                        id: restaurantId,
+                        ownerId: currentUser.uid,
+                        ownerEmail: currentUser.email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        isActive: true,
+                        rating: 0,
+                        totalOrders: 0
+                    };
+                    
+                    await this.restaurantsRef.doc(restaurantId).set(restaurant);
+                    return restaurant;
+                } catch (error) {
+                    console.error('Erro ao criar restaurante:', error);
+                    throw error;
+                }
+            }
+
+            async getRestaurants() {
+                try {
+                    const snapshot = await this.restaurantsRef
+                        .where('isActive', '==', true)
+                        .orderBy('rating', 'desc')
+                        .get();
+                    
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.error('Erro ao buscar restaurantes:', error);
+                    return [];
+                }
+            }
+
+            async getUserRestaurants() {
+                try {
+                    if (!currentUser || userType !== 'cantina') {
+                        return [];
+                    }
+                    
+                    const snapshot = await this.restaurantsRef
+                        .where('ownerId', '==', currentUser.uid)
+                        .get();
+                    
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.error('Erro ao buscar restaurantes do usuário:', error);
+                    return [];
+                }
+            }
+
+            // Produtos
+            async createProduct(restaurantId, productData) {
+                try {
+                    if (!currentUser || userType !== 'cantina') {
+                        throw new Error('Acesso negado. Apenas cantinas podem criar produtos.');
+                    }
+                    
+                    const productId = this.productsRef.doc().id;
+                    const product = {
+                        ...productData,
+                        id: productId,
+                        restaurantId: restaurantId,
+                        ownerId: currentUser.uid,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        isAvailable: true
+                    };
+                    
+                    await this.productsRef.doc(productId).set(product);
+                    return product;
+                } catch (error) {
+                    console.error('Erro ao criar produto:', error);
+                    throw error;
+                }
+            }
+
+            async getProductsByRestaurant(restaurantId) {
+                try {
+                    const snapshot = await this.productsRef
+                        .where('restaurantId', '==', restaurantId)
+                        .where('isAvailable', '==', true)
+                        .get();
+                    
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.error('Erro ao buscar produtos:', error);
+                    return [];
+                }
+            }
+
+            async updateProduct(productId, updateData) {
+                try {
+                    if (!currentUser || userType !== 'cantina') {
+                        throw new Error('Acesso negado.');
+                    }
+                    
+                    await this.productsRef.doc(productId).update({
+                        ...updateData,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (error) {
+                    console.error('Erro ao atualizar produto:', error);
+                    throw error;
+                }
             }
 
             // Criar pedido
@@ -1144,37 +1254,955 @@
         // Instanciar sistema
         const foodValleSystem = new FoodValleSystem();
 
-        // Autenticação simples
-        function loginUser(email, type = 'student') {
-            return auth.signInAnonymously().then((userCredential) => {
-                currentUser = userCredential.user;
-                // Salvar informações do usuário
-                return foodValleSystem.usersRef.doc(currentUser.uid).set({
-                    email: email,
-                    type: type,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-            });
-        }
-
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
             updateCartBadge();
             setupEventListeners();
             setupSearchFunctionality();
+            loadRestaurants();
             
-            // Login automático como estudante
-            loginUser('estudante@univali.br', 'student')
-                .then(() => {
-                    console.log('Usuário logado automaticamente');
-                    currentUser = auth.currentUser;
-                })
-                .catch(error => {
-                    console.error('Erro no login automático:', error);
-                });
+            // Verificar se usuário está logado
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    currentUser = user;
+                    userType = localStorage.getItem('foodvalle_userType');
+                    console.log('Usuário logado:', user.email, 'Tipo:', userType);
+                    showUserInterface();
+                    loadUserLocation(); // Carregar localização do usuário
+                } else {
+                    currentUser = null;
+                    userType = null;
+                    showLoginForm();
+                }
+            });
         });
 
-        // Event listeners
+        // Carregar localização do usuário
+        async function loadUserLocation() {
+            if (!currentUser) return;
+            
+            try {
+                const userDoc = await foodValleSystem.usersRef.doc(currentUser.uid).get();
+                const userData = userDoc.data();
+                
+                if (userData && userData.block && userData.room) {
+                    const locationBtn = document.querySelector('.btn-location span');
+                    if (locationBtn) {
+                        locationBtn.textContent = `${userData.block} ${userData.room}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao carregar localização:', error);
+            }
+        }
+
+        // Carregar restaurantes do Firebase
+        async function loadRestaurants() {
+            try {
+                restaurants = await foodValleSystem.getRestaurants();
+                renderRestaurants();
+            } catch (error) {
+                console.error('Erro ao carregar restaurantes:', error);
+            }
+        }
+
+        // Renderizar restaurantes na tela
+        function renderRestaurants() {
+            const restaurantsGrid = document.querySelector('.restaurants-grid');
+            if (!restaurantsGrid) return;
+            
+            if (restaurants.length === 0) {
+                restaurantsGrid.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-store" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                        <p>Nenhuma cantina disponível ainda</p>
+                        <small>Seja o primeiro a criar uma cantina!</small>
+                    </div>
+                `;
+                return;
+            }
+
+            restaurantsGrid.innerHTML = restaurants.map(restaurant => `
+                <div class="restaurant-card" data-restaurant="${restaurant.id}">
+                    <div class="restaurant-image">
+                        <i class="fas fa-utensils"></i>
+                        <div class="restaurant-badge">
+                            <i class="fas fa-star"></i>
+                            <span>${restaurant.rating || 0}</span>
+                        </div>
+                        <div class="delivery-time">${restaurant.deliveryTime || '30-45 min'}</div>
+                    </div>
+                    <div class="restaurant-info">
+                        <h4>${restaurant.name}</h4>
+                        <p>${restaurant.category || 'Comida caseira'}</p>
+                        <div class="restaurant-footer">
+                            <span class="delivery-fee">${restaurant.deliveryFee || 'Consultar'}</span>
+                            ${restaurant.discount ? `<span class="discount">${restaurant.discount}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Reconfigurar event listeners para os novos cards
+            const restaurantCards = document.querySelectorAll('.restaurant-card');
+            restaurantCards.forEach(card => {
+                card.addEventListener('click', handleRestaurantClick);
+            });
+        }
+
+        // Mostrar interface baseada no tipo de usuário
+        function showUserInterface() {
+            const headerActions = document.querySelector('.header-actions');
+            const bottomNav = document.querySelector('.bottom-nav');
+            
+            if (userType === 'cantina') {
+                // Interface para cantina
+                headerActions.innerHTML = `
+                    <button class="btn-location" onclick="showCantinaPanel()">
+                        <i class="fas fa-store"></i>
+                        <span>Painel</span>
+                    </button>
+                    <button class="btn-profile" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                `;
+                
+                bottomNav.innerHTML = `
+                    <div class="nav-item active" onclick="showHome()">
+                        <i class="fas fa-home"></i>
+                        <span>Início</span>
+                    </div>
+                    <div class="nav-item" onclick="showCantinaPanel()">
+                        <i class="fas fa-store"></i>
+                        <span>Minha Cantina</span>
+                    </div>
+                    <div class="nav-item" onclick="showCantinaOrders()">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Pedidos</span>
+                    </div>
+                    <div class="nav-item" onclick="showCantinaProducts()">
+                        <i class="fas fa-plus"></i>
+                        <span>Produtos</span>
+                    </div>
+                    <div class="nav-item" onclick="showProfile()">
+                        <i class="fas fa-user"></i>
+                        <span>Perfil</span>
+                    </div>
+                `;
+            } else if (userType === 'entregador') {
+                // Interface para entregador
+                headerActions.innerHTML = `
+                    <button class="btn-location" onclick="toggleDeliveryStatus()">
+                        <i class="fas fa-motorcycle"></i>
+                        <span>Online</span>
+                    </button>
+                    <button class="btn-profile" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                `;
+                
+                bottomNav.innerHTML = `
+                    <div class="nav-item active" onclick="showHome()">
+                        <i class="fas fa-home"></i>
+                        <span>Início</span>
+                    </div>
+                    <div class="nav-item" onclick="showDeliveryOrders()">
+                        <i class="fas fa-truck"></i>
+                        <span>Entregas</span>
+                    </div>
+                    <div class="nav-item" onclick="showDeliveryEarnings()">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Ganhos</span>
+                    </div>
+                    <div class="nav-item" onclick="showProfile()">
+                        <i class="fas fa-user"></i>
+                        <span>Perfil</span>
+                    </div>
+                `;
+            }
+            // Interface padrão para estudante já existe
+        }
+
+        // Login form
+        function showLoginForm() {
+            const loginHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <div style="margin-bottom: 30px;">
+                        <i class="fas fa-utensils" style="font-size: 48px; color: var(--primary-color); margin-bottom: 16px;"></i>
+                        <h2 style="color: var(--primary-color); margin-bottom: 8px;">FOODVALLE</h2>
+                        <p style="color: #666;">Entre com sua conta UNIVALI</p>
+                    </div>
+                    
+                    <form id="loginForm" style="max-width: 300px; margin: 0 auto;">
+                        <div style="margin-bottom: 16px;">
+                            <input type="email" id="loginEmail" placeholder="Email UNIVALI" 
+                                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;" required>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <input type="password" id="loginPassword" placeholder="Senha" 
+                                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;" required>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <select id="userType" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
+                                <option value="estudante">Estudante</option>
+                                <option value="cantina">Cantina/Restaurante</option>
+                                <option value="entregador">Entregador</option>
+                            </select>
+                        </div>
+                        <button type="submit" style="width: 100%; padding: 12px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
+                            Entrar
+                        </button>
+                    </form>
+                    
+                    <div style="margin-top: 20px;">
+                        <p style="color: #666; font-size: 14px;">Não tem conta?</p>
+                        <button onclick="showRegisterForm()" style="background: none; border: none; color: var(--primary-color); font-weight: 600; cursor: pointer; text-decoration: underline;">
+                            Criar conta
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const container = document.querySelector('.container');
+            document.body.innerHTML = `
+                <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--background);">
+                    <div style="background: white; border-radius: 16px; box-shadow: var(--shadow); max-width: 400px; width: 100%; margin: 20px;">
+                        ${loginHTML}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        }
+
+        // Register form
+        function showRegisterForm() {
+            const registerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <div style="margin-bottom: 30px;">
+                        <i class="fas fa-utensils" style="font-size: 48px; color: var(--primary-color); margin-bottom: 16px;"></i>
+                        <h2 style="color: var(--primary-color); margin-bottom: 8px;">Criar Conta</h2>
+                        <p style="color: #666;">Junte-se ao FOODVALLE</p>
+                    </div>
+                    
+                    <form id="registerForm" style="max-width: 300px; margin: 0 auto;">
+                        <div style="margin-bottom: 16px;">
+                            <input type="text" id="registerName" placeholder="Nome completo" 
+                                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;" required>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <input type="email" id="registerEmail" placeholder="Email UNIVALI" 
+                                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;" required>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <input type="password" id="registerPassword" placeholder="Senha (min. 6 caracteres)" 
+                                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;" required>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <input type="tel" id="registerPhone" placeholder="Telefone (opcional)" 
+                                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
+                        </div>
+                        
+                        <!-- Campos de localização -->
+                        <div style="margin-bottom: 16px;">
+                            <select id="registerCampus" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;" required>
+                                <option value="">Selecione o Campus</option>
+                                <option value="Campus 1 - Itajaí">Campus 1 - Itajaí</option>
+                                <option value="Campus 2 - Medicina">Campus 2 - Medicina</option>
+                                <option value="Campus 3 - Balneário Camboriú">Campus 3 - Balneário Camboriú</option>
+                                <option value="Campus 4 - São José">Campus 4 - São José</option>
+                                <option value="Campus 5 - Tijucas">Campus 5 - Tijucas</option>
+                            </select>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;">
+                            <input type="text" id="registerBlock" placeholder="Bloco (ex: D4)" 
+                                   style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;" required>
+                            <input type="text" id="registerRoom" placeholder="Sala (ex: 104)" 
+                                   style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;" required>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <select id="registerUserType" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
+                                <option value="estudante">Estudante</option>
+                                <option value="cantina">Cantina/Restaurante</option>
+                                <option value="entregador">Entregador</option>
+                            </select>
+                        </div>
+                        <button type="submit" style="width: 100%; padding: 12px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
+                            Criar Conta
+                        </button>
+                    </form>
+                    
+                    <div style="margin-top: 20px;">
+                        <p style="color: #666; font-size: 14px;">Já tem conta?</p>
+                        <button onclick="showLoginForm()" style="background: none; border: none; color: var(--primary-color); font-weight: 600; cursor: pointer; text-decoration: underline;">
+                            Fazer login
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.innerHTML = `
+                <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--background);">
+                    <div style="background: white; border-radius: 16px; box-shadow: var(--shadow); max-width: 400px; width: 100%; margin: 20px;">
+                        ${registerHTML}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('registerForm').addEventListener('submit', handleRegister);
+        }
+
+        // Handlers de login e registro
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const type = document.getElementById('userType').value;
+            
+            try {
+                await foodValleSystem.login(email, password, type);
+                location.reload(); // Recarregar página para mostrar interface correta
+            } catch (error) {
+                showToast('Erro no login: ' + error.message);
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const phone = document.getElementById('registerPhone').value;
+            const type = document.getElementById('registerUserType').value;
+            const campus = document.getElementById('registerCampus').value;
+            const block = document.getElementById('registerBlock').value;
+            const room = document.getElementById('registerRoom').value;
+            
+            const location = `${campus} - ${block} ${room}`;
+            
+            try {
+                await foodValleSystem.register(email, password, type, {
+                    name: name,
+                    phone: phone,
+                    campus: campus,
+                    block: block,
+                    room: room,
+                    location: location
+                });
+                location.reload(); // Recarregar página para mostrar interface correta
+            } catch (error) {
+                showToast('Erro no registro: ' + error.message);
+            }
+        }
+
+        async function logout() {
+            try {
+                await foodValleSystem.logout();
+                location.reload();
+            } catch (error) {
+                showToast('Erro ao sair: ' + error.message);
+            }
+        }
+
+        // Funções para Cantinas
+        function showCantinaPanel() {
+            showModal('Painel da Cantina', `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <i class="fas fa-store" style="font-size: 48px; color: var(--primary-color); margin-bottom: 16px;"></i>
+                    <h3>Gerencie sua Cantina</h3>
+                </div>
+                
+                <div style="display: grid; gap: 16px;">
+                    <button onclick="showCreateRestaurant()" style="padding: 16px; background: var(--primary-color); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer;">
+                        <i class="fas fa-plus"></i> Criar Nova Cantina
+                    </button>
+                    
+                    <button onclick="showMyRestaurants()" style="padding: 16px; background: var(--secondary-color); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer;">
+                        <i class="fas fa-store"></i> Minhas Cantinas
+                    </button>
+                    
+                    <button onclick="showCantinaProducts()" style="padding: 16px; background: #4caf50; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer;">
+                        <i class="fas fa-utensils"></i> Gerenciar Produtos
+                    </button>
+                    
+                    <button onclick="showCantinaOrders()" style="padding: 16px; background: #ff9800; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer;">
+                        <i class="fas fa-clipboard-list"></i> Pedidos Recebidos
+                    </button>
+                </div>
+            `);
+        }
+
+        function showCreateRestaurant() {
+            const createHTML = `
+                <form id="createRestaurantForm">
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Nome da Cantina:</label>
+                        <input type="text" id="restaurantName" placeholder="Ex: Cantina Central UNIVALI" 
+                               style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Categoria:</label>
+                        <input type="text" id="restaurantCategory" placeholder="Ex: Comida caseira, Fitness, Vegetariana" 
+                               style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Localização:</label>
+                        <input type="text" id="restaurantLocation" placeholder="Ex: Campus 1 - Bloco A" 
+                               style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Telefone:</label>
+                        <input type="tel" id="restaurantPhone" placeholder="(47) 3341-7500" 
+                               style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Tempo Entrega:</label>
+                            <input type="text" id="restaurantDeliveryTime" placeholder="20-30 min" 
+                                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Taxa Entrega:</label>
+                            <input type="text" id="restaurantDeliveryFee" placeholder="R$ 3,00 ou GRÁTIS" 
+                                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Descrição:</label>
+                        <textarea id="restaurantDescription" placeholder="Conte sobre sua cantina..." 
+                                  style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; height: 80px; resize: vertical;"></textarea>
+                    </div>
+                    
+                    <button type="submit" style="width: 100%; padding: 14px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        Criar Cantina
+                    </button>
+                </form>
+            `;
+
+            showModal('Criar Nova Cantina', createHTML);
+            
+            document.getElementById('createRestaurantForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const restaurantData = {
+                    name: document.getElementById('restaurantName').value,
+                    category: document.getElementById('restaurantCategory').value,
+                    location: document.getElementById('restaurantLocation').value,
+                    phone: document.getElementById('restaurantPhone').value,
+                    deliveryTime: document.getElementById('restaurantDeliveryTime').value,
+                    deliveryFee: document.getElementById('restaurantDeliveryFee').value,
+                    description: document.getElementById('restaurantDescription').value
+                };
+                
+                try {
+                    await foodValleSystem.createRestaurant(restaurantData);
+                    showToast('Cantina criada com sucesso!');
+                    closeModal();
+                    loadRestaurants(); // Recarregar lista de restaurantes
+                } catch (error) {
+                    showToast('Erro ao criar cantina: ' + error.message);
+                }
+            });
+        }
+
+        async function showMyRestaurants() {
+            showModal('Minhas Cantinas', '<div style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>');
+            
+            try {
+                const myRestaurants = await foodValleSystem.getUserRestaurants();
+                
+                let restaurantsHTML = '';
+                
+                if (myRestaurants.length === 0) {
+                    restaurantsHTML = `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <i class="fas fa-store" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                            <p>Você ainda não tem cantinas</p>
+                            <button onclick="showCreateRestaurant()" style="margin-top: 16px; padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer;">
+                                Criar Primeira Cantina
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    restaurantsHTML = myRestaurants.map(restaurant => `
+                        <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                <h4 style="margin: 0; color: var(--primary-color);">${restaurant.name}</h4>
+                                <span style="background: ${restaurant.isActive ? '#4caf50' : '#f44336'}; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px;">
+                                    ${restaurant.isActive ? 'Ativa' : 'Inativa'}
+                                </span>
+                            </div>
+                            <p style="margin: 8px 0; color: #666; font-size: 14px;">
+                                <i class="fas fa-map-marker-alt"></i> ${restaurant.location}
+                            </p>
+                            <p style="margin: 8px 0; color: #666; font-size: 14px;">
+                                <i class="fas fa-tag"></i> ${restaurant.category}
+                            </p>
+                            <div style="margin-top: 12px; display: flex; gap: 8px;">
+                                <button onclick="showRestaurantProducts('${restaurant.id}')" style="flex: 1; padding: 8px; background: var(--primary-color); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                                    Produtos
+                                </button>
+                                <button onclick="showRestaurantOrders('${restaurant.id}')" style="flex: 1; padding: 8px; background: var(--secondary-color); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                                    Pedidos
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                showModal('Minhas Cantinas', restaurantsHTML);
+            } catch (error) {
+                showModal('Minhas Cantinas', '<p style="text-align: center; color: #f44336;">Erro ao carregar cantinas</p>');
+            }
+        }
+
+        function showCantinaProducts() {
+            showModal('Gerenciar Produtos', `
+                <div style="margin-bottom: 20px;">
+                    <button onclick="showCreateProduct()" style="width: 100%; padding: 14px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        <i class="fas fa-plus"></i> Adicionar Novo Produto
+                    </button>
+                </div>
+                
+                <div id="productsList">
+                    <div style="text-align: center; padding: 20px;">
+                        <i class="fas fa-spinner fa-spin"></i> Carregando produtos...
+                    </div>
+                </div>
+            `);
+            
+            loadUserProducts();
+        }
+
+        function showCreateProduct() {
+            const createProductHTML = `
+                <form id="createProductForm">
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Nome do Produto:</label>
+                        <input type="text" id="productName" placeholder="Ex: Marmita Executiva" 
+                               style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Descrição:</label>
+                        <textarea id="productDescription" placeholder="Ingredientes e detalhes do produto" 
+                                  style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; height: 80px;" required></textarea>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Preço (R$):</label>
+                            <input type="number" id="productPrice" placeholder="12.90" step="0.01" 
+                                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Categoria:</label>
+                            <select id="productCategory" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                                <option value="tradicional">Tradicional</option>
+                                <option value="vegetariana">Vegetariana</option>
+                                <option value="fitness">Fitness</option>
+                                <option value="lanche">Lanche</option>
+                                <option value="sobremesa">Sobremesa</option>
+                                <option value="bebida">Bebida</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Restaurante:</label>
+                        <select id="productRestaurant" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                            <option value="">Selecione uma cantina...</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" style="width: 100%; padding: 14px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        Criar Produto
+                    </button>
+                </form>
+            `;
+
+            showModal('Criar Novo Produto', createProductHTML);
+            
+            // Carregar restaurantes do usuário no select
+            loadRestaurantsForSelect();
+            
+            document.getElementById('createProductForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const productData = {
+                    name: document.getElementById('productName').value,
+                    description: document.getElementById('productDescription').value,
+                    price: parseFloat(document.getElementById('productPrice').value),
+                    category: document.getElementById('productCategory').value
+                };
+                
+                const restaurantId = document.getElementById('productRestaurant').value;
+                
+                try {
+                    await foodValleSystem.createProduct(restaurantId, productData);
+                    showToast('Produto criado com sucesso!');
+                    closeModal();
+                    showCantinaProducts(); // Recarregar lista de produtos
+                } catch (error) {
+                    showToast('Erro ao criar produto: ' + error.message);
+                }
+            });
+        }
+
+        async function loadRestaurantsForSelect() {
+            try {
+                const myRestaurants = await foodValleSystem.getUserRestaurants();
+                const select = document.getElementById('productRestaurant');
+                
+                if (myRestaurants.length === 0) {
+                    select.innerHTML = '<option value="">Crie uma cantina primeiro</option>';
+                    return;
+                }
+                
+                select.innerHTML = '<option value="">Selecione uma cantina...</option>' + 
+                    myRestaurants.map(restaurant => 
+                        `<option value="${restaurant.id}">${restaurant.name}</option>`
+                    ).join('');
+            } catch (error) {
+                console.error('Erro ao carregar restaurantes:', error);
+            }
+        }
+
+        async function loadUserProducts() {
+            try {
+                const myRestaurants = await foodValleSystem.getUserRestaurants();
+                let allProducts = [];
+                
+                for (const restaurant of myRestaurants) {
+                    const products = await foodValleSystem.getProductsByRestaurant(restaurant.id);
+                    allProducts = allProducts.concat(products.map(p => ({ ...p, restaurantName: restaurant.name })));
+                }
+                
+                const productsList = document.getElementById('productsList');
+                
+                if (allProducts.length === 0) {
+                    productsList.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <i class="fas fa-utensils" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                            <p>Nenhum produto cadastrado</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                productsList.innerHTML = allProducts.map(product => `
+                    <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                            <h4 style="margin: 0; color: var(--text-primary);">${product.name}</h4>
+                            <span style="color: var(--primary-color); font-weight: 600; font-size: 16px;">R$ ${product.price.toFixed(2)}</span>
+                        </div>
+                        <p style="margin: 8px 0; color: #666; font-size: 14px;">${product.description}</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                            <small style="color: #999;">
+                                <i class="fas fa-store"></i> ${product.restaurantName} • 
+                                <i class="fas fa-tag"></i> ${product.category}
+                            </small>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="editProduct('${product.id}')" style="padding: 6px 12px; background: var(--secondary-color); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                                    Editar
+                                </button>
+                                <button onclick="toggleProductAvailability('${product.id}', ${!product.isAvailable})" style="padding: 6px 12px; background: ${product.isAvailable ? '#f44336' : '#4caf50'}; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                                    ${product.isAvailable ? 'Desativar' : 'Ativar'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Erro ao carregar produtos:', error);
+                document.getElementById('productsList').innerHTML = '<p style="text-align: center; color: #f44336;">Erro ao carregar produtos</p>';
+            }
+        }
+
+        async function toggleProductAvailability(productId, isAvailable) {
+            try {
+                await foodValleSystem.updateProduct(productId, { isAvailable });
+                showToast(isAvailable ? 'Produto ativado!' : 'Produto desativado!');
+                loadUserProducts(); // Recarregar lista
+            } catch (error) {
+                showToast('Erro ao atualizar produto');
+            }
+        }
+
+        async function showCantinaOrders() {
+            showModal('Informações de Pedidos', `
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <i class="fas fa-info-circle" style="font-size: 48px; margin-bottom: 16px; color: var(--primary-color);"></i>
+                    <h3 style="color: var(--primary-color); margin-bottom: 16px;">Como funciona o FOODVALLE</h3>
+                    <div style="text-align: left; background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 16px 0;">
+                        <h4 style="margin-bottom: 12px; color: var(--primary-color);">Fluxo dos Pedidos:</h4>
+                        <ol style="line-height: 1.8; color: #666;">
+                            <li><strong>Estudante</strong> faz o pedido pelo app</li>
+                            <li><strong>Entregador</strong> vê o pedido e aceita</li>
+                            <li><strong>Entregador</strong> vai até sua cantina</li>
+                            <li><strong>Entregador</strong> compra os itens do pedido</li>
+                            <li><strong>Entregador</strong> entrega para o estudante</li>
+                            <li><strong>Estudante</strong> paga o entregador (valor + taxa)</li>
+                        </ol>
+                    </div>
+                    <div style="background: #e3f2fd; padding: 16px; border-radius: 8px; margin-top: 16px;">
+                        <p style="color: var(--primary-color); font-weight: 600; margin-bottom: 8px;">
+                            <i class="fas fa-lightbulb"></i> Dica para Cantinas:
+                        </p>
+                        <p style="color: #666; font-size: 14px;">
+                            Mantenha seus produtos sempre atualizados no sistema para que os entregadores saibam o que está disponível para compra.
+                        </p>
+                    </div>
+                </div>
+            `);
+        }
+
+        // Funções para entregadores
+        function toggleDeliveryStatus() {
+            const btn = document.querySelector('.btn-location');
+            const isOnline = btn.querySelector('span').textContent === 'Online';
+            
+            if (isOnline) {
+                btn.querySelector('span').textContent = 'Offline';
+                btn.style.background = 'rgba(244, 67, 54, 0.15)';
+                btn.style.borderColor = 'rgba(244, 67, 54, 0.3)';
+                showToast('Você está offline para entregas');
+            } else {
+                btn.querySelector('span').textContent = 'Online';
+                btn.style.background = 'rgba(76, 175, 80, 0.15)';
+                btn.style.borderColor = 'rgba(76, 175, 80, 0.3)';
+                showToast('Você está online para entregas');
+            }
+        }
+
+        async function showDeliveryOrders() {
+            showModal('Pedidos Disponíveis', '<div style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Carregando pedidos...</div>');
+            
+            try {
+                const availableOrders = await foodValleSystem.ordersRef
+                    .where('status', '==', 'pending')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                const myActiveOrders = await foodValleSystem.ordersRef
+                    .where('deliveryPersonId', '==', currentUser.uid)
+                    .where('status', 'in', ['accepted', 'purchasing', 'on_the_way'])
+                    .get();
+                
+                const orders = availableOrders.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const activeOrders = myActiveOrders.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                let ordersHTML = '';
+                
+                // Meus pedidos ativos primeiro
+                if (activeOrders.length > 0) {
+                    ordersHTML += '<h4 style="margin: 0 0 16px 0; color: var(--primary-color);">Meus Pedidos Ativos</h4>';
+                    
+                    activeOrders.forEach(order => {
+                        const statusInfo = getStatusInfo(order.status);
+                        const timeInfo = order.createdAt ? new Date(order.createdAt.toDate()).toLocaleString('pt-BR') : 'Agora';
+                        
+                        ordersHTML += `
+                            <div style="border: 2px solid var(--primary-color); border-radius: 12px; padding: 16px; margin-bottom: 16px; background: #f8f9ff;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                    <div>
+                                        <h4 style="margin: 0; color: var(--text-primary);">Pedido #${order.id}</h4>
+                                        <p style="margin: 4px 0; color: ${statusInfo.color}; font-weight: 600; font-size: 14px;">● ${statusInfo.text}</p>
+                                        <p style="margin: 4px 0; color: #666; font-size: 12px;">${timeInfo}</p>
+                                    </div>
+                                    <span style="color: var(--primary-color); font-weight: 600; font-size: 18px;">R$ ${order.total?.toFixed(2) || '0.00'}</span>
+                                </div>
+                                
+                                <div style="margin-bottom: 12px; font-size: 13px; color: #666;">
+                                    <div><strong>🏪 Cantina:</strong> ${order.restaurantName || 'Cantina'}</div>
+                                    <div><strong>📍 Entregar em:</strong> ${order.deliveryAddress || 'Não informado'}</div>
+                                    <div><strong>👤 Cliente:</strong> ${order.userEmail}</div>
+                                    <div><strong>📱 Itens:</strong> ${order.items?.length || 0} itens no pedido</div>
+                                </div>
+                                
+                                ${getDeliveryActionButtons(order)}
+                            </div>
+                        `;
+                    });
+                    
+                    ordersHTML += '<h4 style="margin: 20px 0 16px 0; color: #666;">Outros Pedidos Disponíveis</h4>';
+                }
+                
+                // Pedidos disponíveis
+                if (orders.length === 0) {
+                    ordersHTML += `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <i class="fas fa-shopping-bag" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                            <p>Nenhum pedido disponível</p>
+                            <small>Aguarde novos pedidos serem criados</small>
+                        </div>
+                    `;
+                } else {
+                    orders.forEach(order => {
+                        const statusInfo = getStatusInfo(order.status);
+                        const timeInfo = order.createdAt ? new Date(order.createdAt.toDate()).toLocaleString('pt-BR') : 'Agora';
+                        
+                        ordersHTML += `
+                            <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                    <div>
+                                        <h4 style="margin: 0; color: var(--text-primary);">Pedido #${order.id}</h4>
+                                        <p style="margin: 4px 0; color: ${statusInfo.color}; font-weight: 600; font-size: 14px;">● ${statusInfo.text}</p>
+                                        <p style="margin: 4px 0; color: #666; font-size: 12px;">${timeInfo}</p>
+                                    </div>
+                                    <span style="color: var(--primary-color); font-weight: 600; font-size: 16px;">R$ ${order.total?.toFixed(2) || '0.00'}</span>
+                                </div>
+                                
+                                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px;">
+                                    <div style="margin-bottom: 8px;"><strong>🏪 Cantina:</strong> ${order.restaurantName || 'Cantina'}</div>
+                                    <div style="margin-bottom: 8px;"><strong>📍 Entregar em:</strong> ${order.deliveryAddress || 'Não informado'}</div>
+                                    <div style="margin-bottom: 8px;"><strong>👤 Cliente:</strong> ${order.userEmail}</div>
+                                    
+                                    <div style="margin-top: 12px;"><strong>🛒 Itens para comprar:</strong></div>
+                                    <div style="margin-top: 8px; max-height: 120px; overflow-y: auto;">
+                                        ${order.items?.map(item => `
+                                            <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #e0e0e0;">
+                                                <span>${item.quantity}x ${item.name}</span>
+                                                <span>R$ ${(item.price * item.quantity).toFixed(2)}</span>
+                                            </div>
+                                        `).join('') || ''}
+                                    </div>
+                                    
+                                    <div style="margin-top: 12px; padding-top: 8px; border-top: 2px solid var(--primary-color); display: flex; justify-content: space-between; font-weight: 600;">
+                                        <span>Total a pagar na cantina:</span>
+                                        <span style="color: var(--primary-color);">R$ ${order.total?.toFixed(2) || '0.00'}</span>
+                                    </div>
+                                </div>
+                                
+                                <button onclick="acceptDeliveryOrder('${order.id}')" 
+                                        style="width: 100%; padding: 12px; background: var(--primary-color); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                                    <i class="fas fa-motorcycle"></i> Aceitar Pedido (Ir buscar e entregar)
+                                </button>
+                            </div>
+                        `;
+                    });
+                }
+
+                showModal('Pedidos Disponíveis', ordersHTML);
+            } catch (error) {
+                console.error('Erro ao carregar entregas:', error);
+                showModal('Pedidos Disponíveis', '<p style="text-align: center; color: #f44336;">Erro ao carregar pedidos</p>');
+            }
+        }
+
+        function getDeliveryActionButtons(order) {
+            switch(order.status) {
+                case 'accepted':
+                    return `
+                        <button onclick="updateDeliveryStatus('${order.id}', 'purchasing')" 
+                                style="width: 100%; padding: 10px; background: #9c27b0; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-shopping-cart"></i> Cheguei na cantina (Comprando)
+                        </button>
+                    `;
+                case 'purchasing':
+                    return `
+                        <button onclick="updateDeliveryStatus('${order.id}', 'on_the_way')" 
+                                style="width: 100%; padding: 10px; background: #3f51b5; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-route"></i> Saindo da cantina (A caminho)
+                        </button>
+                    `;
+                case 'on_the_way':
+                    return `
+                        <button onclick="updateDeliveryStatus('${order.id}', 'delivered')" 
+                                style="width: 100%; padding: 10px; background: #4caf50; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-check-circle"></i> Marcar como Entregue
+                        </button>
+                    `;
+                default:
+                    return '';
+            }
+        }
+
+        async function acceptDeliveryOrder(orderId) {
+            try {
+                await foodValleSystem.updateOrderStatus(orderId, 'accepted', {
+                    deliveryPersonId: currentUser.uid,
+                    deliveryPersonEmail: currentUser.email,
+                    acceptedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showToast('Pedido aceito! Vá até a cantina comprar os itens.');
+                showDeliveryOrders();
+            } catch (error) {
+                showToast('Erro ao aceitar pedido');
+            }
+        }
+
+        async function updateDeliveryStatus(orderId, status) {
+            try {
+                const updateData = {
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                if (status === 'purchasing') {
+                    updateData.arrivedAtRestaurantTime = firebase.firestore.FieldValue.serverTimestamp();
+                } else if (status === 'on_the_way') {
+                    updateData.leftRestaurantTime = firebase.firestore.FieldValue.serverTimestamp();
+                } else if (status === 'delivered') {
+                    updateData.deliveryCompletedTime = firebase.firestore.FieldValue.serverTimestamp();
+                }
+                
+                await foodValleSystem.updateOrderStatus(orderId, status, updateData);
+                
+                const statusMessages = {
+                    'purchasing': 'Status atualizado: Comprando na cantina',
+                    'on_the_way': 'Status atualizado: A caminho do cliente',
+                    'delivered': 'Entrega finalizada com sucesso!'
+                };
+                
+                showToast(statusMessages[status] || 'Status atualizado!');
+                showDeliveryOrders();
+            } catch (error) {
+                showToast('Erro ao atualizar status');
+            }
+        }
+
+        function showDeliveryEarnings() {
+            showModal('Meus Ganhos', `
+                <div style="text-align: center; padding: 20px;">
+                    <div style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white; padding: 24px; border-radius: 12px; margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 8px 0;">Ganhos de Hoje</h3>
+                        <p style="font-size: 32px; font-weight: 700; margin: 0;">R$ 0,00</p>
+                        <p style="margin: 8px 0 0 0; opacity: 0.9;">0 entregas realizadas</p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                        <div style="text-align: center; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+                            <div style="font-size: 20px; font-weight: 600; color: var(--primary-color);">R$ 0,00</div>
+                            <div style="font-size: 12px; color: #666;">Esta semana</div>
+                        </div>
+                        <div style="text-align: center; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+                            <div style="font-size: 20px; font-weight: 600; color: var(--primary-color);">R$ 0,00</div>
+                            <div style="font-size: 12px; color: #666;">Este mês</div>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; color: #666;">
+                        <i class="fas fa-chart-line" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                        <p>Comece a fazer entregas para ver seus ganhos aqui!</p>
+                    </div>
+                </div>
+            `);
+        }
+
+        // Função para mostrar home
+        function showHome() {
+            location.reload();
+        }
+
         function setupEventListeners() {
             // Bottom navigation
             const navItems = document.querySelectorAll('.nav-item');
@@ -1238,8 +2266,10 @@
         // Clique no restaurante
         function handleRestaurantClick(event) {
             const restaurantId = event.currentTarget.getAttribute('data-restaurant');
-            const restaurant = restaurants[restaurantId];
-            showRestaurantMenu(restaurant, restaurantId);
+            const restaurant = restaurants.find(r => r.id === restaurantId);
+            if (restaurant) {
+                showRestaurantMenu(restaurant, restaurantId);
+            }
         }
 
         // Clique na categoria
@@ -1296,37 +2326,94 @@
 
         // Seletor de localização
         function showLocationSelector() {
-            const locations = [
-                'UNIVALI - Campus 1',
-                'UNIVALI - Campus 2', 
-                'UNIVALI - Campus 3',
-                'UFSC - Campus Trindade',
-                'UDESC - Campus Centro'
-            ];
+            if (!currentUser) {
+                showToast('Faça login primeiro');
+                return;
+            }
+            
+            // Buscar localização atual do usuário
+            foodValleSystem.usersRef.doc(currentUser.uid).get().then(userDoc => {
+                const userData = userDoc.data();
+                const currentLocation = userData?.location || 'Localização não definida';
+                
+                const locationHTML = `
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h4>Localização Atual</h4>
+                        <p style="color: var(--primary-color); font-weight: 600; margin: 10px 0;">${currentLocation}</p>
+                    </div>
+                    
+                    <form id="updateLocationForm">
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Campus:</label>
+                            <select id="updateCampus" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                                <option value="">Selecione o Campus</option>
+                                <option value="Campus 1 - Itajaí" ${userData?.campus === 'Campus 1 - Itajaí' ? 'selected' : ''}>Campus 1 - Itajaí</option>
+                                <option value="Campus 2 - Medicina" ${userData?.campus === 'Campus 2 - Medicina' ? 'selected' : ''}>Campus 2 - Medicina</option>
+                                <option value="Campus 3 - Balneário Camboriú" ${userData?.campus === 'Campus 3 - Balneário Camboriú' ? 'selected' : ''}>Campus 3 - Balneário Camboriú</option>
+                                <option value="Campus 4 - São José" ${userData?.campus === 'Campus 4 - São José' ? 'selected' : ''}>Campus 4 - São José</option>
+                                <option value="Campus 5 - Tijucas" ${userData?.campus === 'Campus 5 - Tijucas' ? 'selected' : ''}>Campus 5 - Tijucas</option>
+                            </select>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Bloco:</label>
+                                <input type="text" id="updateBlock" placeholder="Ex: D4" value="${userData?.block || ''}"
+                                       style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Sala:</label>
+                                <input type="text" id="updateRoom" placeholder="Ex: 104" value="${userData?.room || ''}"
+                                       style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" style="width: 100%; padding: 12px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            Atualizar Localização
+                        </button>
+                    </form>
+                `;
 
-            let locationList = locations.map(location => 
-                `<div class="location-option" onclick="selectLocation('${location}')">${location}</div>`
-            ).join('');
-
-            showModal('Selecionar Localização', `
-                <div class="location-selector">
-                    ${locationList}
-                </div>
-            `);
-        }
-
-        function selectLocation(location) {
-            document.querySelector('.btn-location span').textContent = location;
-            closeModal();
-            showToast(`Localização alterada para ${location}`);
+                showModal('Atualizar Localização', locationHTML);
+                
+                document.getElementById('updateLocationForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const campus = document.getElementById('updateCampus').value;
+                    const block = document.getElementById('updateBlock').value;
+                    const room = document.getElementById('updateRoom').value;
+                    const location = `${campus} - ${block} ${room}`;
+                    
+                    try {
+                        await foodValleSystem.usersRef.doc(currentUser.uid).update({
+                            campus: campus,
+                            block: block,
+                            room: room,
+                            location: location,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        document.querySelector('.btn-location span').textContent = `${block} ${room}`;
+                        closeModal();
+                        showToast('Localização atualizada com sucesso!');
+                    } catch (error) {
+                        showToast('Erro ao atualizar localização');
+                    }
+                });
+            }).catch(error => {
+                showToast('Erro ao carregar dados do usuário');
+            });
         }
 
         // Carrinho de compras
         function addToCart(item, restaurantId = null) {
             // Adicionar informações do restaurante ao item
-            if (restaurantId && restaurants[restaurantId]) {
-                item.restaurantId = restaurantId;
-                item.restaurantName = restaurants[restaurantId].name;
+            if (restaurantId) {
+                const restaurant = restaurants.find(r => r.id === restaurantId);
+                if (restaurant) {
+                    item.restaurantId = restaurantId;
+                    item.restaurantName = restaurant.name;
+                }
             }
 
             const existingItem = cart.find(cartItem => cartItem.id === item.id);
@@ -1412,35 +2499,50 @@
 
             const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             
-            // Criar pedido
-            const orderData = {
-                items: cart,
-                total: total,
-                restaurantId: cart[0].restaurantId || '1',
-                restaurantName: cart[0].restaurantName || 'Cantina Central UNIVALI',
-                deliveryAddress: 'UNIVALI - Campus 1',
-                paymentMethod: 'PIX',
-                notes: 'Pedido via FOODVALLE App'
-            };
+            // Buscar localização do usuário
+            foodValleSystem.usersRef.doc(currentUser.uid).get().then(userDoc => {
+                const userData = userDoc.data();
+                const userLocation = userData?.location || 'Localização não informada';
+                
+                // Criar pedido
+                const orderData = {
+                    items: cart,
+                    total: total,
+                    restaurantId: cart[0].restaurantId || '1',
+                    restaurantName: cart[0].restaurantName || 'Cantina',
+                    deliveryAddress: userLocation,
+                    userLocation: {
+                        campus: userData?.campus || '',
+                        block: userData?.block || '',
+                        room: userData?.room || ''
+                    },
+                    paymentMethod: 'PIX',
+                    notes: 'Pedido via FOODVALLE App - Entregador deve comprar na cantina',
+                    needsPurchase: true // Indica que entregador precisa comprar
+                };
 
-            // Enviar para Firebase
-            foodValleSystem.createOrder(orderData)
-                .then(order => {
-                    showToast(`Pedido ${order.id} enviado! Total: R$ ${total.toFixed(2)}`);
-                    cart = [];
-                    saveCart();
-                    updateCartBadge();
-                    closeModal();
-                    
-                    // Mostrar status do pedido
-                    setTimeout(() => {
-                        showOrderTracking(order.id);
-                    }, 2000);
-                })
-                .catch(error => {
-                    showToast('Erro ao processar pedido. Tente novamente.');
-                    console.error('Checkout error:', error);
-                });
+                // Enviar para Firebase
+                foodValleSystem.createOrder(orderData)
+                    .then(order => {
+                        showToast(`Pedido ${order.id} enviado! Total: R$ ${total.toFixed(2)}`);
+                        cart = [];
+                        saveCart();
+                        updateCartBadge();
+                        closeModal();
+                        
+                        // Mostrar status do pedido
+                        setTimeout(() => {
+                            showOrderTracking(order.id);
+                        }, 2000);
+                    })
+                    .catch(error => {
+                        showToast('Erro ao processar pedido. Tente novamente.');
+                        console.error('Checkout error:', error);
+                    });
+            }).catch(error => {
+                showToast('Erro ao buscar dados do usuário.');
+                console.error('User data error:', error);
+            });
         }
 
         // Função para rastrear pedido
@@ -1454,11 +2556,23 @@
                     <p style="font-size: 18px; font-weight: 600; margin-bottom: 10px;">#${orderId}</p>
                     <div style="background: #f0f8f0; padding: 15px; border-radius: 10px; margin: 15px 0;">
                         <p style="color: #2e7d32; font-weight: 600;">
-                            <i class="fas fa-clock"></i> Status: Aguardando confirmação
+                            <i class="fas fa-motorcycle"></i> Status: Aguardando entregador
                         </p>
                         <p style="color: #666; font-size: 14px; margin-top: 5px;">
-                            A cantina irá confirmar seu pedido em instantes
+                            Um entregador irá aceitar seu pedido, comprar na cantina e levar até você
                         </p>
+                    </div>
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 10px; margin: 15px 0;">
+                        <p style="color: var(--primary-color); font-weight: 600; margin-bottom: 8px;">
+                            <i class="fas fa-info-circle"></i> Como funciona:
+                        </p>
+                        <ol style="text-align: left; color: #666; font-size: 14px; margin: 0; padding-left: 20px;">
+                            <li>Entregador aceita seu pedido</li>
+                            <li>Entregador vai até a cantina</li>
+                            <li>Entregador compra seus itens</li>
+                            <li>Entregador leva até sua localização</li>
+                            <li>Você paga o entregador (total + taxa)</li>
+                        </ol>
                     </div>
                     <button class="btn-checkout" onclick="closeModal(); showOrders();" style="background: var(--primary-color);">
                         Acompanhar Pedido
@@ -1469,38 +2583,62 @@
         }
 
         // Menu do restaurante
-        function showRestaurantMenu(restaurant, restaurantId) {
-            let menuHTML = restaurant.menu.map(item => `
-                <div class="menu-item">
-                    <div class="menu-item-info">
-                        <h4>${item.name}</h4>
-                        <p>${item.description}</p>
-                        <span class="price">R$ ${item.price.toFixed(2)}</span>
-                    </div>
-                    <button onclick="addToCart({id:'${item.id}', name:'${item.name}', price:${item.price}, description:'${item.description}'}, '${restaurantId}')" class="btn-add">Adicionar</button>
-                </div>
-            `).join('');
+        async function showRestaurantMenu(restaurant, restaurantId) {
+            showModal(restaurant.name, '<div style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Carregando cardápio...</div>');
+            
+            try {
+                const products = await foodValleSystem.getProductsByRestaurant(restaurantId);
+                
+                let menuHTML = '';
+                
+                if (products.length === 0) {
+                    menuHTML = `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <i class="fas fa-utensils" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                            <p>Cardápio em construção</p>
+                            <small>Esta cantina ainda não adicionou produtos</small>
+                        </div>
+                    `;
+                } else {
+                    menuHTML = products.map(item => `
+                        <div class="menu-item">
+                            <div class="menu-item-info">
+                                <h4>${item.name}</h4>
+                                <p>${item.description}</p>
+                                <span class="price">R$ ${item.price.toFixed(2)}</span>
+                                <small style="display: block; color: #999; margin-top: 4px;">
+                                    <i class="fas fa-tag"></i> ${item.category}
+                                </small>
+                            </div>
+                            <button onclick="addToCart({id:'${item.id}', name:'${item.name}', price:${item.price}, description:'${item.description}', category:'${item.category}'}, '${restaurantId}')" class="btn-add">Adicionar</button>
+                        </div>
+                    `).join('');
+                }
 
-            const headerInfo = `
-                <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
-                    <p style="color: #666; margin-bottom: 5px;">${restaurant.category}</p>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 5px;">
-                        <i class="fas fa-map-marker-alt"></i> ${restaurant.location}
-                    </p>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 10px;">
-                        <i class="fas fa-phone"></i> ${restaurant.phone}
-                    </p>
-                    <div style="display: flex; justify-content: center; gap: 15px; align-items: center;">
-                        <span style="display: flex; align-items: center; gap: 3px;">
-                            <i class="fas fa-star" style="color: gold; font-size: 12px;"></i> ${restaurant.rating}
-                        </span>
-                        <span style="color: #666; font-size: 14px;">${restaurant.deliveryTime}</span>
-                        <span style="color: #666; font-size: 14px;">Entrega ${restaurant.deliveryFee}</span>
+                const headerInfo = `
+                    <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+                        <p style="color: #666; margin-bottom: 5px;">${restaurant.category}</p>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 5px;">
+                            <i class="fas fa-map-marker-alt"></i> ${restaurant.location}
+                        </p>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 10px;">
+                            <i class="fas fa-phone"></i> ${restaurant.phone}
+                        </p>
+                        <div style="display: flex; justify-content: center; gap: 15px; align-items: center;">
+                            <span style="display: flex; align-items: center; gap: 3px;">
+                                <i class="fas fa-star" style="color: gold; font-size: 12px;"></i> ${restaurant.rating || 0}
+                            </span>
+                            <span style="color: #666; font-size: 14px;">${restaurant.deliveryTime}</span>
+                            <span style="color: #666; font-size: 14px;">Entrega ${restaurant.deliveryFee}</span>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
 
-            showModal(restaurant.name, headerInfo + menuHTML);
+                showModal(restaurant.name, headerInfo + menuHTML);
+            } catch (error) {
+                console.error('Erro ao carregar cardápio:', error);
+                showModal(restaurant.name, '<p style="text-align: center; color: #f44336;">Erro ao carregar cardápio</p>');
+            }
         }
 
         // Pedidos com Firebase
@@ -1562,11 +2700,10 @@
 
         function getStatusInfo(status) {
             const statusMap = {
-                'pending': { text: 'Aguardando confirmação', color: '#ff9800' },
-                'confirmed': { text: 'Confirmado pela cantina', color: '#2196f3' },
-                'preparing': { text: 'Em preparo', color: '#ff9800' },
-                'ready': { text: 'Pronto para entrega', color: '#9c27b0' },
-                'out_for_delivery': { text: 'Saiu para entrega', color: '#3f51b5' },
+                'pending': { text: 'Aguardando entregador', color: '#ff9800' },
+                'accepted': { text: 'Entregador aceitou', color: '#2196f3' },
+                'purchasing': { text: 'Comprando na cantina', color: '#9c27b0' },
+                'on_the_way': { text: 'A caminho', color: '#3f51b5' },
                 'delivered': { text: 'Entregue', color: '#4caf50' },
                 'cancelled': { text: 'Cancelado', color: '#f44336' }
             };
