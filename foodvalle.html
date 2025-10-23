@@ -656,6 +656,43 @@
             }
         }
 
+        /* Notificações */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            max-width: 320px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .notification-success {
+            border-left: 4px solid #4caf50;
+        }
+
+        .notification-info {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .notification-warning {
+            border-left: 4px solid #ff9800;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
         /* Responsive Design */
         @media (max-width: 480px) {
             .container {
@@ -1256,19 +1293,24 @@
 
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
-            updateCartBadge();
-            setupEventListeners();
-            setupSearchFunctionality();
-            loadRestaurants();
-            
             // Verificar se usuário está logado
             auth.onAuthStateChanged(user => {
                 if (user) {
                     currentUser = user;
                     userType = localStorage.getItem('foodvalle_userType');
+                    
+                    // Verificar se o tipo de usuário está definido
+                    if (!userType) {
+                        // Se não tem tipo definido, fazer logout e pedir login novamente
+                        auth.signOut();
+                        return;
+                    }
+                    
+                    // Configurar listeners para notificações em tempo real
+                    setupNotificationListeners();
+                    
                     console.log('Usuário logado:', user.email, 'Tipo:', userType);
-                    showUserInterface();
-                    loadUserLocation(); // Carregar localização do usuário
+                    initializeApp();
                 } else {
                     currentUser = null;
                     userType = null;
@@ -1276,6 +1318,16 @@
                 }
             });
         });
+
+        // Inicializar aplicação após login
+        function initializeApp() {
+            updateCartBadge();
+            setupEventListeners();
+            setupSearchFunctionality();
+            loadRestaurants();
+            showUserInterface();
+            loadUserLocation();
+        }
 
         // Carregar localização do usuário
         async function loadUserLocation() {
@@ -1523,11 +1575,37 @@
                         </div>
                         
                         <div style="margin-bottom: 20px;">
-                            <select id="registerUserType" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
+                            <select id="registerUserType" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;" onchange="toggleDeliveryFields()">
                                 <option value="estudante">Estudante</option>
                                 <option value="cantina">Cantina/Restaurante</option>
                                 <option value="entregador">Entregador</option>
                             </select>
+                        </div>
+                        
+                        <!-- Campos específicos para entregador -->
+                        <div id="deliveryFields" style="display: none;">
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--primary-color);">Chave PIX para recebimento:</label>
+                                <select id="pixType" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 8px;">
+                                    <option value="cpf">CPF</option>
+                                    <option value="email">E-mail</option>
+                                    <option value="telefone">Telefone</option>
+                                    <option value="chave_aleatoria">Chave Aleatória</option>
+                                </select>
+                                <input type="text" id="pixKey" placeholder="Digite sua chave PIX" 
+                                       style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
+                                <small style="color: #666; font-size: 12px;">Esta chave será enviada aos clientes para pagamento</small>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Veículo de entrega:</label>
+                                <select id="vehicleType" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
+                                    <option value="moto">Moto</option>
+                                    <option value="bike">Bicicleta</option>
+                                    <option value="carro">Carro</option>
+                                    <option value="pe">A pé</option>
+                                </select>
+                            </div>
                         </div>
                         <button type="submit" style="width: 100%; padding: 12px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
                             Criar Conta
@@ -1552,6 +1630,18 @@
             `;
 
             document.getElementById('registerForm').addEventListener('submit', handleRegister);
+        }
+
+        // Função para mostrar/esconder campos específicos do entregador
+        function toggleDeliveryFields() {
+            const userType = document.getElementById('registerUserType').value;
+            const deliveryFields = document.getElementById('deliveryFields');
+            
+            if (userType === 'entregador') {
+                deliveryFields.style.display = 'block';
+            } else {
+                deliveryFields.style.display = 'none';
+            }
         }
 
         // Handlers de login e registro
@@ -1584,16 +1674,43 @@
             
             const location = `${campus} - ${block} ${room}`;
             
+            let additionalData = {
+                name: name,
+                phone: phone,
+                campus: campus,
+                block: block,
+                room: room,
+                location: location
+            };
+            
+            // Adicionar dados específicos do entregador
+            if (type === 'entregador') {
+                const pixType = document.getElementById('pixType').value;
+                const pixKey = document.getElementById('pixKey').value;
+                const vehicleType = document.getElementById('vehicleType').value;
+                
+                if (!pixKey.trim()) {
+                    showToast('Chave PIX é obrigatória para entregadores');
+                    return;
+                }
+                
+                additionalData.delivery = {
+                    pixType: pixType,
+                    pixKey: pixKey.trim(),
+                    vehicleType: vehicleType,
+                    isOnline: false,
+                    totalDeliveries: 0,
+                    rating: 5.0
+                };
+            }
+            
             try {
-                await foodValleSystem.register(email, password, type, {
-                    name: name,
-                    phone: phone,
-                    campus: campus,
-                    block: block,
-                    room: room,
-                    location: location
-                });
-                location.reload(); // Recarregar página para mostrar interface correta
+                await foodValleSystem.register(email, password, type, additionalData);
+                showToast('Conta criada com sucesso!');
+                // Recarregar página após pequeno delay
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
             } catch (error) {
                 showToast('Erro no registro: ' + error.message);
             }
@@ -2129,14 +2246,43 @@
 
         async function acceptDeliveryOrder(orderId) {
             try {
+                // Buscar dados do entregador para pegar a chave PIX
+                const deliveryPersonDoc = await foodValleSystem.usersRef.doc(currentUser.uid).get();
+                const deliveryPersonData = deliveryPersonDoc.data();
+                
+                if (!deliveryPersonData.delivery?.pixKey) {
+                    showToast('Chave PIX não configurada. Atualize seu perfil.');
+                    return;
+                }
+                
+                const pixInfo = {
+                    pixType: deliveryPersonData.delivery.pixType,
+                    pixKey: deliveryPersonData.delivery.pixKey,
+                    deliveryPersonName: deliveryPersonData.name
+                };
+                
                 await foodValleSystem.updateOrderStatus(orderId, 'accepted', {
                     deliveryPersonId: currentUser.uid,
                     deliveryPersonEmail: currentUser.email,
-                    acceptedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    deliveryPersonName: deliveryPersonData.name,
+                    acceptedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    pixInfo: pixInfo
                 });
+                
+                // Criar notificação para o cliente
+                await foodValleSystem.ordersRef.doc(orderId).collection('notifications').add({
+                    type: 'delivery_accepted',
+                    title: 'Entregador encontrado!',
+                    message: `${deliveryPersonData.name} aceitou sua entrega. PIX: ${pixInfo.pixType.toUpperCase()} - ${pixInfo.pixKey}`,
+                    pixInfo: pixInfo,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    read: false
+                });
+                
                 showToast('Pedido aceito! Vá até a cantina comprar os itens.');
                 showDeliveryOrders();
             } catch (error) {
+                console.error('Erro ao aceitar pedido:', error);
                 showToast('Erro ao aceitar pedido');
             }
         }
@@ -2668,17 +2814,36 @@
 
                 // Pedidos do Firebase
                 if (orders.length > 0) {
-                    orders.forEach(order => {
+                    for (const order of orders) {
                         const statusInfo = getStatusInfo(order.status);
                         const timeInfo = order.createdAt ? new Date(order.createdAt.toDate()).toLocaleString('pt-BR') : 'Agora';
+                        
+                        // Verificar se há notificações não lidas
+                        let notificationBadge = '';
+                        if (order.status === 'accepted' && order.pixInfo) {
+                            notificationBadge = '<span style="background: #ff4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 8px;">PIX</span>';
+                        }
                         
                         ordersHTML += `
                             <div class="order-item" style="border-left: 3px solid ${statusInfo.color}; padding-left: 15px;">
                                 <div class="order-info">
-                                    <h4>${order.restaurantName || 'Restaurante'}</h4>
+                                    <h4>${order.restaurantName || 'Restaurante'}${notificationBadge}</h4>
                                     <p style="color: ${statusInfo.color}; font-weight: 600;">● ${statusInfo.text}</p>
                                     <p style="color: #666; font-size: 14px;">Pedido #${order.id}</p>
                                     <p style="color: #666; font-size: 12px;">${timeInfo}</p>
+                                    ${order.pixInfo ? `
+                                        <div style="background: #f0f8ff; padding: 10px; border-radius: 8px; margin-top: 8px; border-left: 3px solid var(--primary-color);">
+                                            <p style="color: var(--primary-color); font-weight: 600; margin-bottom: 4px;">
+                                                <i class="fas fa-motorcycle"></i> Entregador: ${order.deliveryPersonName}
+                                            </p>
+                                            <p style="color: #666; font-size: 14px; margin-bottom: 4px;">
+                                                <strong>PIX:</strong> ${order.pixInfo.pixType.toUpperCase()} - ${order.pixInfo.pixKey}
+                                            </p>
+                                            <p style="color: #666; font-size: 12px;">
+                                                💳 Pague o valor total + taxa de entrega para o entregador
+                                            </p>
+                                        </div>
+                                    ` : ''}
                                     <span class="price">R$ ${order.total?.toFixed(2) || '0.00'}</span>
                                 </div>
                                 <div>
@@ -2686,7 +2851,7 @@
                                 </div>
                             </div>
                         `;
-                    });
+                    }
                 } else {
                     ordersHTML += '<p style="text-align: center; padding: 40px; color: #666;">Nenhum pedido encontrado<br><small>Que tal fazer seu primeiro pedido?</small></p>';
                 }
@@ -2696,6 +2861,63 @@
                 console.error('Erro ao carregar pedidos:', error);
                 showModal('Meus Pedidos', '<p style="text-align: center; padding: 20px; color: #f44336;">Erro ao carregar pedidos</p>');
             }
+        }
+
+        // Listener para notificações em tempo real
+        function setupNotificationListeners() {
+            if (!currentUser) return;
+            
+            const ordersRef = db.collection('orders');
+            ordersRef.where('customerId', '==', currentUser.uid)
+                    .where('status', 'in', ['accepted', 'on_way', 'delivered'])
+                    .onSnapshot((snapshot) => {
+                        snapshot.docChanges().forEach((change) => {
+                            if (change.type === 'modified') {
+                                const order = change.doc.data();
+                                if (order.status === 'accepted' && order.pixInfo) {
+                                    showNotification('Pedido Aceito!', 
+                                        `Entregador: ${order.deliveryPersonName}\nPIX: ${order.pixInfo.pixKey}`, 
+                                        'success');
+                                } else if (order.status === 'on_way') {
+                                    showNotification('Pedido a Caminho!', 
+                                        `Seu pedido está sendo entregue por ${order.deliveryPersonName}`, 
+                                        'info');
+                                } else if (order.status === 'delivered') {
+                                    showNotification('Pedido Entregue!', 
+                                        'Obrigado por usar o FoodValle!', 
+                                        'success');
+                                }
+                            }
+                        });
+                    });
+        }
+
+        // Sistema de notificações visuais
+        function showNotification(title, message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="font-size: 24px;">
+                        ${type === 'success' ? '✅' : type === 'info' ? 'ℹ️' : '⚠️'}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">${title}</div>
+                        <div style="font-size: 14px; line-height: 1.3;">${message.replace(/\n/g, '<br>')}</div>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 18px; cursor: pointer; opacity: 0.7;">×</button>
+                </div>
+            `;
+            
+            // Adicionar ao body
+            document.body.appendChild(notification);
+            
+            // Auto remover após 5 segundos
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
         }
 
         function getStatusInfo(status) {
